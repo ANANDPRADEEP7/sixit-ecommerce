@@ -12,13 +12,10 @@ router.get('/signup',userController.loadSignup);
 router.post('/signup',userController.signup);
 router.post('/verify-otp',userController.verifyOtp);
 router.post('/resend-otp',userController.resendOtp);
-// router.get('/userProfile',userAuth,profileController.postNewPassword);
 
 
 //product Management
 router.get('/productDetails',userAuth,productController.productDetails)
-
-
 
 
 router.get('/auth/google',passport.authenticate('google',{scope:['profile','email']}));

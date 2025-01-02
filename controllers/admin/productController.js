@@ -11,9 +11,11 @@ const getProductAddPage=async (req,res)=>{
   try{
   const category=await Category.find({isListed:true});
   const brand=await Brand.find({isBlocked:false});
+  const msg=req.query.msg || null;
   res.render("product-add",{
     cat:category,
-    brand:brand
+    brand:brand,
+    msg
   })
 }catch(error){
   res.redirect("/pageerror")
@@ -21,13 +23,23 @@ const getProductAddPage=async (req,res)=>{
 }
 
 const addProducts=async (req,res)=>{
-  console.log("navas");
   try {
     const products=req.body;
-    console.log(products)
-    const productExists=await Product.findOne({
-      productName:products.productName,
-    });
+
+    const requiredFields = ['productName', 'description', 'brand', 'regularPrice', 'quantity'];
+        for (const field of requiredFields) {
+            if (!products[field]) {
+                return res.status(400).json({
+                    success: false,
+                    message: `${field} is required`
+                });
+            }
+        }
+        const productExists = await Product.findOne({
+          productName: { $regex: new RegExp(`^${products.productName}$`, 'i') }
+      });
+
+    
     if(!productExists){
       const images=[]
 
@@ -42,9 +54,9 @@ const addProducts=async (req,res)=>{
       }
       const categoryId=await Category.findOne({name:products.category});
 
-      if(!categoryId){
-        return res.status(400).join("Invalid category name")
-      }
+      // if(!categoryId){
+      //   return res.redirect("/admin/addproducts?msg=this category ")
+      // }
       const newProduct= Product.create({
         productName:products.productName,
         description:products.description,
@@ -63,7 +75,7 @@ const addProducts=async (req,res)=>{
       
       return res.redirect("/admin/addProducts");
     }else{
-      return res.status(400).json("Product already exist,please try with another name");
+      return res.status(400).json({success:false, message:"product already exist"});
     }
   } catch (error) {
     console.error("Error saving product",error.message);

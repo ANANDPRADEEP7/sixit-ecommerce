@@ -5,6 +5,10 @@ const Product=require("../../models/productSchema");
 const getBrandpage =async (req,res)=>{
   try {
     const page=parseInt(req.query.page)||1;
+    let message = "";
+    if(req.query.msg){
+      message = req.query.msg
+    }
     const limit=4;
     const skip=(page-1)*limit;
     const brandData=await Brand.find({}).sort({craeteAt:-1}).skip(skip).limit(limit);
@@ -16,6 +20,7 @@ const getBrandpage =async (req,res)=>{
       currentPage:page,
       totalPages:totalPages,
       totalBrands:toatalBrands,
+      message
     })
   } catch (error) {
     res.redirect("/pageerror")
@@ -26,7 +31,7 @@ const getBrandpage =async (req,res)=>{
 const addBrand=async (req,res)=>{
   try {
     const brand =req.body.name;
-    const findBrand=await Brand.findOne({brand});
+    const findBrand=await Brand.findOne({brandName:{$regex:brand,$options:"i"}});
     if(!findBrand){
       const image =req.file.filename;
       const newBrand=new Brand({
@@ -34,9 +39,12 @@ const addBrand=async (req,res)=>{
         brandImage:image,
       })
       await newBrand.save();
-      res.redirect("/admin/brandS");
+      return res.redirect("/admin/brandS");
     }
+    const message = "Brand already exists"
+    res.redirect(`/admin/brands?msg=${message}`)
   } catch (error) {
+    console.error(error)
     res.redirect("/pageerror")
   }
 }

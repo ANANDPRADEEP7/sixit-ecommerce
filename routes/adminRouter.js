@@ -1,15 +1,26 @@
 const express=require("express")
 const router=express.Router();
 const adminController=require("../controllers/admin/adminController");
+
 // const { route } = require("./userRouter");
 const customerController=require("../controllers/admin/customerController")
+
 const categoryController=require("../controllers/admin/categoryController")
+
 const brandController=require("../controllers/admin/brandController");
+
 const productController=require("../controllers/admin/productController");
+
 const {userAuth,adminAuth}=require("../middlewares/auth")
+
 const multer=require("multer");
+
 const storage=require("../helpers/multer");
+
 const uploads=multer({storage:storage})
+
+
+// ==========================================
 //Error Management
 router.get("/pageerror",adminController.pageerror)
 //Login Management

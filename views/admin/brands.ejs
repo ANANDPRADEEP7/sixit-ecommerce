@@ -34,6 +34,9 @@
     <div class="card-body">
       <div class="row">
         <div class="col-md-3">
+          <%if(message && message.length>0){%>
+            <span class="text-danger"><%=message%></span>
+          <%}%>
           <form method="post" action="/admin/addBrand" enctype="multipart/form-data">
             <div class="mb-4">
               <label for="product_name" class="form-label">Brand Name</label>

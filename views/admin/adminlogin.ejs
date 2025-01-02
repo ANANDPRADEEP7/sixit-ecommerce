@@ -6,6 +6,7 @@
   <title>Admin Login</title>
   <link rel="stylesheet" href="styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
   <div class="login-container">
@@ -13,18 +14,17 @@
       <h2>Admin Login</h2>
       <form method="post" action="/admin/login" id="adminLoginForm">
         <div class="form-group">
-          <input type="email" id="email" name="email" required>
-          <label for="username">Email</label>
+          <input type="email" id="email" name="email" >
+          <label for="email">Email</label>
         </div>
         <div class="form-group">
-          <input type="password" id="password" name="password" required>
+          <input type="password" id="password" name="password" >
           <label for="password">Password</label>
         </div>
         <button type="submit" class="login-btn">Login</button>
       </form>
       <p class="forgot-password"><a href="#">Forgot Password?</a></p>
     </div>
-
   </div>
 
   <style>
@@ -129,5 +129,49 @@
       color: #0056b3;
     }
   </style>
+
+   <script>
+    document.getElementById('adminLoginForm').addEventListener('submit', function (event) {
+      event.preventDefault(); 
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+     
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      
+      if (!email || !password) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Oops...',
+          text: 'Both email and password are required!',
+        });
+      } else if (!emailRegex.test(email)) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Invalid Email',
+          text: 'Please enter a valid email address.',
+        });
+      } else if (password.length < 8) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Invalid Password',
+          text: 'Password must be at least 8 characters long.',
+        });
+      } else {
+        
+        Swal.fire({
+          icon: 'success',
+          title: 'Login Successful!',
+          text: 'Redirecting...',
+          timer: 2000,
+          showConfirmButton: false,
+        }).then(() => {
+          this.submit();
+        });
+      }
+    });
+  </script>
 </body>
 </html>
