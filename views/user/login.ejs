@@ -28,7 +28,7 @@
          <%}%>
         <button type="submit" class="btn btn-primary btn-block">Login</button>
         <div class="options">
-          <a href="#">Forgot Password?</a>
+          <a href="/forgot-password" class="forgot-password-link ms-auto">Forgot Password?</a>
           <a href="/signup">Sign Up</a>
         </div>
         <div class="social-btns">
@@ -45,38 +45,35 @@
 
   <script>
     document.getElementById('loginForm').addEventListener('submit', function (event) {
-      event.preventDefault(); 
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value.trim();
-  
-      
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  
-      if (!email || !password) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Oops...',
-          text: 'Both email and password are required!'
-        });
-      } else if (!emailRegex.test(email)) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Invalid Email',
-          text: 'Please enter a valid email address.'
-        });
-      } else {
-        
-        Swal.fire({
-          icon: 'success',
-          title: 'Success!',
-          text: 'Login successful. Redirecting...',
-          timer: 2000,
-          showConfirmButton: false
-        }).then(() => {
-          this.submit(); 
-        });
-      }
+  event.preventDefault(); 
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
+
+  const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+
+  if (!email || !password) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Oops...',
+      text: 'Both email and password are required!'
     });
+    return;
+  } 
+  
+  if (!emailRegex.test(email)) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Invalid Email',
+      text: 'Please enter a valid email address.'
+    });
+    return;
+  }
+
+  // If basic validation passes, submit the form to server
+  this.submit();
+});
+
   </script>
   
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>

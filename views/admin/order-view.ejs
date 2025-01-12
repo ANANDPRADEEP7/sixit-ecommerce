@@ -1,0 +1,201 @@
+<%- include("../../views/partials/admin/header") %>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+    }
+
+    h1 {
+        text-align: center;
+        color: #333;
+        margin: 20px 0;
+    }
+
+    .order-details {
+        width: 80%;
+        max-width: 900px;
+        margin: 20px auto;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        background-color: #fff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .order-details h3 {
+        margin-bottom: 15px;
+        color: #007bff;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 5px;
+    }
+
+    .order-details p {
+        line-height: 1.8;
+        color: #555;
+        margin: 5px 0;
+    }
+
+    .order-details ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .order-details .item {
+        display: flex;
+        align-items: center;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 10px;
+        margin-bottom: 10px;
+        background-color: #f9f9f9;
+    }
+
+    .order-details .item img {
+        margin-right: 15px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+
+    .order-details .item p {
+        margin: 0;
+        margin-right: 15px;
+    }
+
+    .order-details .buttons {
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    .btn-back {
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 16px;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-back:hover {
+        background-color: #0056b3;
+    }
+
+    .highlight {
+        font-weight: bold;
+        color: #333;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 5px;
+        color: #fff;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .badge.pending {
+        background-color: #ffc107;
+    }
+
+    .badge.shipped {
+        background-color: #17a2b8;
+    }
+
+    .badge.deliverd {
+        background-color: #28a745;
+    }
+    .badge.cancelled {
+        background-color: #dc3545; /* Red for Cancelled */
+    }
+
+    .badge.confirmed {
+        background-color: #ec9e17; /* Orange for Confirmed */
+    }
+
+    .payment-method {
+        color: #29a738;  
+    }
+
+    .timestamp {
+        color: #007bff;
+    }
+
+    @media (max-width: 768px) {
+        .order-details {
+            width: 95%;
+            padding: 15px;
+        }
+
+        .order-details .item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .order-details .item img {
+            margin-bottom: 10px;
+        }
+
+        .btn-back {
+            font-size: 14px;
+        }
+    }
+</style>
+
+<body>
+    <h1>Order Details</h1>
+    <div class="order-details">
+        <h3>Order Information</h3>
+        <p><strong>Order ID:</strong> <%= order._id %></p>
+        <p><strong>Order Created At:</strong> <span class="timestamp"><%= new Date(order.createdAt).toLocaleString() %></span></p>
+        <p><strong>Order Status:</strong> 
+            <% order.orderedItems.forEach(item => { %>
+                <span class="badge <%= item.status.toLowerCase() %>"><%= item.status %></span>
+            <% }) %>
+        </p>
+
+        <h3>User Information</h3>
+        <p><strong>Name:</strong> <%= order.userId.name %></p>
+        <p><strong>Email:</strong> <%= order.userId.email %></p>
+
+        <h3>Shipping Address</h3>
+        <p><strong>Address Type:</strong> <%= order.shippingAddress.addressType %></p>
+        <p><strong>Name:</strong> <%= order.shippingAddress.name %></p>
+        <p><strong>City:</strong> <%= order.shippingAddress.city %></p>
+        <p><strong>Landmark:</strong> <%= order.shippingAddress.landMark %></p>
+        <p><strong>State:</strong> <%= order.shippingAddress.state %></p>
+        <p><strong>Zip Code:</strong> <%= order.shippingAddress.pincode %></p>
+        <p><strong>Phone:</strong> <%= order.shippingAddress.phone %></p>
+
+        <h3>Order Items</h3>
+        <ul>
+            <% order.orderedItems.forEach(item => { %>
+                <li>
+                    <div class="item">
+                        <img src="/uploads/re-image/<%= item.id.productImage[0] %>" alt="Product Image" width="100">
+                        <div>
+                            <p><strong>Product Name:</strong> <%= item.id.productName %></p>
+                            <p><strong>Quantity:</strong> <%= item.quantity %></p>
+                            <p><strong>Price:</strong> <%= item.price %> /-</p>
+                        </div>
+                    </div>
+                </li>
+            <% }); %>
+        </ul>
+
+        <h3>Payment Details</h3>
+        <p><strong>Payment Method:</strong> <%= order.paymentMethod %></p>
+        <p><strong>Delivery Option:</strong> <%= order.deliveryMethod %></p>
+        <p><strong>Subtotal:</strong> <%= order.totalPrice %> /-</p>
+        <p><strong>Total:</strong> <%= order.finalAmount %> /-</p>
+    </div>
+
+    <div class="buttons">
+        <a href="/admin/orderList" class="btn-back">Back to Orders</a>
+    </div>
+</body>
+</html>

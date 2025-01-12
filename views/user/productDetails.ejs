@@ -78,17 +78,16 @@
                                             <li><i class="fi-rs-credit-card mr-5"></i> Cash on Delivery available</li>
                                         </ul>
                                     </div>
-                                   
+<!--                                    
                                     <div class="attr-detail attr-size">
                                         <strong class="mr-10">Size</strong>
                                         <ul class="list-filter size-filter font-small">
                                             <li><a href="#">S</a></li>
                                             <li class="active"><a href="#">M</a></li>
                                             <li><a href="#">L</a></li>
-                                            <!-- <li><a href="#">XL</a></li>
-                                            <li><a href="#">XXL</a></li> -->
+                                            
                                         </ul>
-                                    </div>
+                                    </div> -->
                                     <div class="bt-1 border-color-1 mt-30 mb-30"></div>
                                     <div class="detail-extralink">
                                         <div class="detail-qty border radius">
@@ -97,7 +96,7 @@
                                             <a href="#" class="qty-up"><i class="fi-rs-angle-small-up"></i></a>
                                         </div>
                                         <div class="product-extra-link2">
-                                            <button type="submit" class="button button-add-to-cart">Add to cart</button>
+                                            <button type="submit" class="button button-add-to-cart"  onclick="addToCart('<%=product._id%>')">Add to cart</button>
                                             <a aria-label="Add To Wishlist" class="action-btn hover-up" href="shop-wishlist.html"><i class="fi-rs-heart"></i></a>
                                             <a aria-label="Compare" class="action-btn hover-up" href="shop-compare.html"><i class="fi-rs-shuffle"></i></a>
                                         </div>
@@ -685,7 +684,7 @@
                     <div class="col-lg-4 col-md-6">
                         <div class="widget-about font-md mb-md-5 mb-lg-0">
                             <div class="logo logo-width-1 wow fadeIn animated">
-                                <a href="index.html"><img src="assets/imgs/theme/logo.svg" alt="logo"></a>
+                                <a href="index.html"><img src="assets/imgs/theme/sixit-logo.png" alt="logo"></a>
                             </div>
                             <h5 class="mt-20 mb-10 fw-600 text-grey-4 wow fadeIn animated">Contact</h5>
                             <p class="wow fadeIn animated">
@@ -763,6 +762,45 @@
                 </div>
             </div>
         </div>
+        <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            function addToCart(productId) {
+
+$.ajax({
+url: "/addToCart",
+method: "POST",
+data: { productId: productId },
+success: (response) => {
+console.log("h",productId);
+console.log('object',response);
+if (response.status===true) {
+    Swal.fire({
+        title: "Added To Cart",
+        text: "The Product Has been Added to Your Cart",
+        icon: "success",
+        timer: 2000
+    })
+} else {
+    Swal.fire({
+        title: "Product Alredy in Cart",
+        text: response.message,
+        icon: "info",
+        timer: 2000
+    })
+}
+},
+error: (error) => {
+Swal.fire({
+    title: "Error",
+    text: "Error Adding the Poduct to your Cart..!",
+    icon: "error",
+    timer: 2000
+})
+}
+})
+}
+        </script>
        
         <%-include("../../Views/partials/user/footer")%>
     

@@ -45,4 +45,4 @@ const addressSchem=new Schema({
 
 const Address=mongoose.model("Address",addressSchem)
 
-module.export=Address;
+module.exports=Address;

@@ -11,6 +11,8 @@ const brandController=require("../controllers/admin/brandController");
 
 const productController=require("../controllers/admin/productController");
 
+const orderController = require("../controllers/admin/orderController");
+
 const {userAuth,adminAuth}=require("../middlewares/auth")
 
 const multer=require("multer");
@@ -55,6 +57,12 @@ router.get("/editProduct",adminAuth,productController.getEditProduct);
 router.post("/editProduct/:id",adminAuth,uploads.array("images",4),productController.editProduct);
 router.post("/deleteImage",adminAuth,productController.deleteSingleImage);
 //router.post("/updateproduct",adminAuth,productController.updateproduct);
+
+// order Management
+router.get("/orderList",adminAuth,orderController.orderList);
+router.get("/orderView/:orderId",adminAuth,orderController.orderView);
+router.get("/orderEdit/:orderId",adminAuth,orderController.EditStatusPage)
+router.post("/orderEdit/:orderId",adminAuth,orderController.EditStatus)
 
 
 

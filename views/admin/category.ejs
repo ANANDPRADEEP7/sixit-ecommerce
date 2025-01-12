@@ -252,7 +252,7 @@
         },
         body: JSON.stringify({ name, description }),
       })
-        // .then((response) => response.json())
+        
         .then((response) => {
           if (!response.ok) {
             return response.json().then((error) => {
@@ -268,12 +268,12 @@
             title: "Success",
             text: data.message || "Category added successfully!",
           }).then(() => {
-            location.reload(); // Reload the page to reflect changes
+            location.reload(); 
           });
         })
         .catch((error) => {
           console.log(error);
-          console.error(error.message); // Log the error for debugging
+          console.error(error.message); 
           if (error.message === "category already exists") {
             Swal.fire({
               icon: "error",
@@ -296,16 +296,7 @@
       const description = document.getElementById("descriptionId").value.trim();
       isValid = true;
 
-      // if (name === "") {
-      //   displayErrorMessage("name-error", "please enter a name");
-      //   isValid = false;
-      // } else if (a - zA - z.test(name)) {
-      //   displayErrorMessage(
-      //     "name error",
-      //     "Category name should contain only alphabetic characters"
-      //   );
-      //   isValid = false;
-      // }
+      
 
       if (description === "") {
         displayErrorMessage("description-error", "please enter a description");

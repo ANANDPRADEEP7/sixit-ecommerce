@@ -1,0 +1,67 @@
+<%- include("../../views/partials/admin/header") %>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+<body>
+    <div class="container mt-5">
+        <h3 class="mb-4">Order Status Management</h3>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>User</th>
+                        <th>Status</th>                      
+                        <th>Update Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><%=order._id%></td>
+                        <td><%=order.userId.name%></td>
+                        <td>
+                            <div><strong><%=order.orderStatus%></strong></div>                           
+                        </td>
+                        
+                        <td>
+                        
+                            <% order.orderedItems.forEach((item, index) => { %>
+                                <% if(item.status !== "Delivered" && item.status !== "Cancelled") { %>
+                                    <form action="/admin/orderEdit/<%= order._id%>" method="POST" class="d-flex">
+                                        <input type="hidden" name="orderId" value="<%= order._id%>">
+                                        <input type="hidden" name="itemIndex" value="<%= index %>">
+                                        <select name="status" class="form-select me-2">
+                                            <% 
+                                            let allowedStatuses = [];
+                                            if (item.status === 'pending') {
+                                                allowedStatuses = ['Processing', 'Cancelled'];
+                                            } else if (item.status === 'Processing') {
+                                                allowedStatuses = ['Shipped', 'Cancelled'];
+                                            } else if (item.status === 'Shipped') {
+                                                allowedStatuses = ['Delivered'];
+                                            }
+                                            %>
+                                            <option value="<%= item.status %>" selected><%= item.status %></option>
+                                            <% allowedStatuses.forEach(status => { %>
+                                                <option value="<%= status %>"><%= status %></option>
+                                            <% }) %>
+                                        </select>
+                                        <button type="submit" class="btn btn-primary">Update</button>
+                                    </form>
+                                <% } else { %>   
+                                    <div><strong>No Actions Allowed...!</strong></div>
+                                <% } %>
+                            <% }) %>
+                            </td>
+                            <td>
+                            <a href="/admin/orderList" class="btn btn-secondary btn-sm">Cancel Edit</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
