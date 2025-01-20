@@ -42,20 +42,24 @@
 
                 <td><%=data[i].salePrice%></td>
                 <td>
-                  
-                </td>
-
-                <td>
-                
-                    <button class="btn btn-info" onclick="" style="width: 100px;">
+                    <% if (locals.data[i].productOffer) { %>
+                      <%= locals.data[i].productOffer %>
+                    <% } else { %>
+                      0%
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (locals.data[i].productOffer === 0) { %>
+                      <button class="btn btn-info" onclick="addOffer('<%= locals.data[i]._id %>')" style="width: 100px;">
                         <a href="#" class="text-white">Add Offer</a>
-                    </button>
-        
-                    <button class="btn btn-info" onclick="" style="width: 100px;">
+                      </button>
+                    <% } else { %>
+                      <button class="btn btn-info" onclick="removeOffer('<%= locals.data[i]._id %>')" style="width: 100px;">
                         <a href="#" class="text-white">Remove</a>
-                    </button>
-                
-                </td>
+                      </button>
+                    <% } %>
+                  </td>
+                  
                 <td><%=data[i].quantity%></td>
                 <td>
 
@@ -104,4 +108,66 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10/dist/sweetalert2.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+    async function addOffer(productId){
+        const {value:amount}=await Swal.fire({
+            title:"Offer in percentage",
+            input:"number",
+            inputLabel:'percentage',
+            inputPlaceholder:"%"
+        })
+        $.ajax({
+            url:"/admin/addProductOffer",
+            method:'post',
+            data:{
+                percentage:amount,
+                productId:productId,
+            },
+            success:(response)=>{
+                if(response.status===true){
+                    location.reload();
+                    Swal.fire("Offer added","The offer has been remove","sucess")
+                }else{
+                    alert("failed")
+                }
+            }
+        })
+    }
+
+    function removeOffer(productId){
+        try {
+            Swal.fire({
+                title:"Remove Offer",
+                text:"Are you sure you want to remove this offer",
+                icon:"warning",
+                showCancleButton:true,
+                confirmButtonColor:"#3085d6",
+                cancelButtonColor:'d33',
+                confirmButtonText:"Yes,remove it!",
+                timer:5000,
+                timerProgressBar:true
+            }).then(()=>{
+                $.ajax({
+                    url:"/admin/removeProductOffer",
+                    method:'post',
+                    data:{
+                        productId:productId
+                    },
+                    success:(response)=>{
+                        if(response.status===true){
+                            Swal.fire('Removeed!','The offer has been removed','success');
+                            location.reload(); 
+                        }else if(response.status===false){
+                            Swal.fire('failed');
+                        }else{
+                            alert('failed')
+                        }
+                    }
+                })
+            })
+        } catch (error) {
+            console.error(error);
+        }
+    }
+</script>
 <%- include("../../views/partials/admin/footer") %>

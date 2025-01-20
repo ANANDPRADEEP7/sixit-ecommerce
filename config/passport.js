@@ -64,7 +64,7 @@ passport.use(
 
         let user = await User.findOne({ googleId: profile.id });
         if (user) {
-          return done(null, user);
+         return done(null,user)
         } else {
           console.log("New user, saving to database...");
           user = new User({

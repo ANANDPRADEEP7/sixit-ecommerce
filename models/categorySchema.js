@@ -16,7 +16,7 @@ const categorySchema=new mongoose.Schema({
     default:true
   },
   categoryOffer:{
-    type:Boolean,
+    type:Number,
     default:0
   },
   createdAt:{

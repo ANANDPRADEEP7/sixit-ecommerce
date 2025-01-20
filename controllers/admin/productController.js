@@ -332,8 +332,38 @@ const deleteSingleImage = async (req, res) => {
 //   }
 // };
 
+const addProductOffer=async (req,res)=>{
+  try {
+    const {productId,percentage}=req.body;
+    const findProduct=await Product.findOne({_id:productId});
+    const findCategory=await Category.findOne({_id:findProduct.category});
+    if(findCategory){
+      return res.json({status:false,message:"This Products category already has a Category offer"})
+    }
+    findProduct.salePrice = findProduct.salePrice-Math.floor(findProduct.regularPrice*(percentage/100));
+    findProduct.productOffer=parseInt(percentage);
+    await findProduct.save();
+    res.json({status:true});
 
+  } catch (error) {
+    res.redirect("/pageerror");
+    res.status(500).json({status:false,message:"Internal Server Error"})
+  }
+}
 
+const removeProductOffer=async (req,res)=>{
+  try {
+    const {productId}=req.body;
+    const findProduct=await Product.findOne({_id:productId});
+    const percentage=findProduct.productOffer;
+    findProduct.salePrice=findProduct.salePrice+Math.floor(findProduct.regularPrice*(percentage/100));
+    findProduct.productOffer=0;
+    await findProduct.save();
+    res.json({status:true})
+  } catch (error) {
+    res.redirect("/pageerror")
+  }
+}
 
 module.exports={
   getProductAddPage,
@@ -344,5 +374,6 @@ module.exports={
   getEditProduct,
   editProduct,
   deleteSingleImage,
-  
+  addProductOffer,
+  removeProductOffer
 }

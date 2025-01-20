@@ -29,14 +29,21 @@
       </div>
       <div class="form-group">
         <label for="password">Password</label>
-        <input type="password" id="password" name="password" placeholder="Create a password" >
+        <div class="password-container">
+          <input type="password" id="password" name="password" placeholder="Create a password">
+          <button type="button" class="toggle-password" onclick="togglePassword('password', this)">👁️</button>
+        </div>
         <div id="error4" class="error-message"></div>
       </div>
       <div class="form-group">
         <label for="confirm-password">Confirm Password</label>
-        <input type="password" id="confirm-password" name="confirmpassword" placeholder="Confirm your password" >
+        <div class="password-container">
+          <input type="password" id="confirm-password" name="confirmpassword" placeholder="Confirm your password">
+          <button type="button" class="toggle-password" onclick="togglePassword('confirm-password', this)">👁️</button>
+        </div>
         <div id="error5" class="error-message"></div>
       </div>
+      
       <%if(locals.message && message.length>0){%>
         <div class="alert alert-danger text-center">
             <%=message%>
@@ -159,6 +166,26 @@ button.btn:hover {
   height: 20px;
 }
 
+.password-container {
+  position: relative;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: #333;
+  transition: color 0.3s ease;
+}
+
+.toggle-password:hover {
+  color: #6e8efb;
+}
 
 
 /* Error Messages */
@@ -207,6 +234,15 @@ button.btn:hover {
   <!-- <script src="https://accounts.google.com/gsi/client" async defer></script> -->
 
   <script>
+
+function togglePassword(fieldId, toggleButton) {
+  const field = document.getElementById(fieldId);
+  const isPassword = field.type === "password";
+
+  field.type = isPassword ? "text" : "password";
+  toggleButton.innerHTML = isPassword ? "🙈" : "👁️"; // Toggle the icon
+}
+
    document.addEventListener("DOMContentLoaded", function () {
   const nameid = document.getElementById("name");
   const emailid = document.getElementById("email");

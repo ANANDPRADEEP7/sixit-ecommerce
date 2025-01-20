@@ -7,6 +7,7 @@ const {userAuth}=require("../middlewares/auth")
 const profileController = require('../controllers/user/profileController');
 const cartController=require("../controllers/user/cartController");
 const checkoutController=require("../controllers/user/checkoutController");
+const wishlistController=require("../controllers/user/wishlistController");
 
 
 // Error Management
@@ -70,6 +71,10 @@ router.get("/checkOut",userAuth,checkoutController.checkOutPage);
 router.post("/check-out-addaddress",userAuth,checkoutController.checkOutAddress);
 router.get("/orderComform",userAuth,checkoutController.orderComform);
 router.post("/checkout",userAuth,checkoutController.postCheckout);
+
+// wishlist Management
+router.get("/wishlist",userAuth,wishlistController.loadWishlist);
+
 
 
 

@@ -13,6 +13,8 @@ const productController=require("../controllers/admin/productController");
 
 const orderController = require("../controllers/admin/orderController");
 
+const couponController=require("../controllers/admin/couponController");
+
 const {userAuth,adminAuth}=require("../middlewares/auth")
 
 const multer=require("multer");
@@ -41,6 +43,9 @@ router.get("/listCategory",adminAuth,categoryController.getListCategory);
 router.get("/unlistCategory",adminAuth,categoryController.getUnListCategory);
 router.get("/editCategory",adminAuth,categoryController.getEditCategory);
 router.post("/editCategory/:id",adminAuth,categoryController.editCategory);
+router.post("/addCategoryOffer",adminAuth,categoryController.addCategoryOffer);
+router.post("/removeCategoryOffer",adminAuth,categoryController.removeCategoryOffer);
+
 // Brand management
 router.get("/brands",adminAuth,brandController.getBrandpage);
 router.post("/addBrand",adminAuth,uploads.single("image"),brandController.addBrand);
@@ -57,12 +62,23 @@ router.get("/editProduct",adminAuth,productController.getEditProduct);
 router.post("/editProduct/:id",adminAuth,uploads.array("images",4),productController.editProduct);
 router.post("/deleteImage",adminAuth,productController.deleteSingleImage);
 //router.post("/updateproduct",adminAuth,productController.updateproduct);
+router.post("/addProductOffer",adminAuth,productController.addProductOffer);
+router.post("/removeProductOffer",adminAuth,productController.removeProductOffer);
 
 // order Management
 router.get("/orderList",adminAuth,orderController.orderList);
 router.get("/orderView/:orderId",adminAuth,orderController.orderView);
-router.get("/orderEdit/:orderId",adminAuth,orderController.EditStatusPage)
-router.post("/orderEdit/:orderId",adminAuth,orderController.EditStatus)
+router.get("/orderEdit/:orderId",adminAuth,orderController.EditStatusPage);
+router.post("/orderEdit/:orderId",adminAuth,orderController.EditStatus);
+
+//coupen Management
+router.get("/coupon",adminAuth,couponController.loadCoupon);
+router.post("/createCoupon",adminAuth,couponController.createCoupon);
+router.get("/editCoupon",adminAuth,couponController.editCoupon);
+router.post("/updateCoupon",adminAuth,couponController.updateCoupon);
+router.get("/deleteCoupon",adminAuth,couponController.deleteCoupon);
+
+
 
 
 
