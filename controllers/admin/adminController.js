@@ -5,15 +5,26 @@ const bcrypt=require("bcrypt")
 
 
 const pageerror=async(req,res)=>{
-  res.render("pageerror")
+  try {
+    res.render('admin/pageerror');
+  } catch (error) {
+    console.error('Error in pageerror:', error);
+    res.status(500).send('Internal Server Error');
+  }
 }
 
 
-const loadLogin= (req,res)=>{
-    if(req.session.admin){
-      return res.redirect("/admin/dashboard")
+const loadLogin= async (req,res)=>{
+  try {
+    if (req.isAuthenticated() && req.user.role === 'admin') {
+      res.redirect('/admin');
+    } else {
+      res.render('admin/adminlogin');
     }
-    res.render("adminlogin",{message:null})    
+  } catch (error) {
+    console.error('Error in loadLogin:', error);
+    res.status(500).send('Internal Server Error');
+  }
 }
 
 
@@ -44,12 +55,11 @@ const login = async (req, res) => {
 };
 
 const loadDashboard=async (req,res)=>{
-  if(req.session.admin){
-    try {
-      res.render("dashboard")
-    } catch (error) {
-      res.redirect("/pageerror")
-    }
+  try {
+    res.render('admin/dashboard');
+  } catch (error) {
+    console.error('Error in loadDashboard:', error);
+    res.status(500).send('Internal Server Error');
   }
 }
 

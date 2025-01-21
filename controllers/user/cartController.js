@@ -269,12 +269,58 @@ const updateCartQuantity = async(req,res)=>{
 }
 
 const cancelOrder = async (req, res) => {
+    try {
+        const orderId = req.params.orderId;
+        const productId = req.params.productId;
+        const { reason } = req.body;
+        const userId = req.session.user;
+
+        const order = await Order.findOne({ _id: orderId, userId });
+
+        if (!order) {
+            return res.status(404).json({ success: false, message: "Order not found" });
+        }
+
+        const orderItem = order.orderedItems.find(
+            item => item.id.toString() === productId
+        );
+
+        if (!orderItem) {
+            return res.status(404).json({ success: false, message: "Product not found in order" });
+        }
+
+        if (orderItem.status === "Delivered" || orderItem.status === "Cancelled") {
+            return res.status(400).json({
+                success: false,
+                message: "Cannot cancel order in current status"
+            });
+        }
+
+        // Update status to cancelled and add reason
+        orderItem.status = "Cancelled";
+        orderItem.reason = reason;
+        await order.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Order cancelled successfully"
+        });
+
+    } catch (error) {
+        console.error("Error in cancelling order:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
+
+const cancelEntireOrder = async (req, res) => {
   try {
-    const { orderId, productId } = req.params;
+    const { orderId } = req.params;
     const userId = req.session.user;
 
     console.log("Order ID:", orderId);
-    console.log("Product ID:", productId);
     console.log("User ID from session:", userId);
 
     if (!mongoose.Types.ObjectId.isValid(orderId)) {
@@ -286,38 +332,88 @@ const cancelOrder = async (req, res) => {
       return res.status(404).json({ error: "Order not found or does not belong to the user." });
     }
 
-    // Find the specific product in the order
-    const productIndex = order.orderedItems.findIndex(item => item.name === productId);
-    if (productIndex === -1) {
-      return res.status(404).json({ error: "Product not found in this order." });
+    // Check if any product is already shipped or delivered
+    const hasShippedOrDelivered = order.orderedItems.some(
+      item => item.status === "Shipped" || item.status === "Delivered"
+    );
+
+    if (hasShippedOrDelivered) {
+      return res.status(400).json({ error: "Cannot cancel order. Some items have already been shipped or delivered." });
     }
 
-    // Check product status
-    if (order.orderedItems[productIndex].status === "Shipped") {
-      return res.status(400).json({ error: "Product has already been shipped and cannot be canceled." });
-    }
-    if (order.orderedItems[productIndex].status === "Cancelled") {
-      return res.status(400).json({ error: "Product is already canceled." });
+    // Check if all products are already cancelled
+    const allCancelled = order.orderedItems.every(item => item.status === "Cancelled");
+    if (allCancelled) {
+      return res.status(400).json({ error: "Order is already cancelled." });
     }
 
-    // Update only the specific product's status
-    order.orderedItems[productIndex].status = "Cancelled";
+    // Update all products' status to Cancelled
+    order.orderedItems.forEach(item => {
+      if (item.status !== "Shipped" && item.status !== "Delivered") {
+        item.status = "Cancelled";
+      }
+    });
+
     await order.save();
 
-    // Send JSON response
-    return res.status(200).json({ message: "Product cancelled successfully" });
+    return res.status(200).json({ message: "Order cancelled successfully" });
   } catch (error) {
-    console.error("Error canceling product:", error);
-    return res.status(500).json({ error: "Failed to cancel the product. Please try again later." });
+    console.error("Error canceling order:", error);
+    return res.status(500).json({ error: "Failed to cancel the order. Please try again later." });
   }
 };
 
+const returnProduct = async (req, res) => {
+    try {
+        const { orderId, productId, reason } = req.body;
+        const userId = req.session.user;
 
+        const order = await Order.findOne({ _id: orderId, userId });
+        
+        if (!order) {
+            return res.status(404).json({ success: false, message: "Order not found" });
+        }
+
+        const orderItem = order.orderedItems.find(
+            item => item.id.toString() === productId
+        );
+
+        if (!orderItem) {
+            return res.status(404).json({ success: false, message: "Product not found in order" });
+        }
+
+        if (orderItem.status !== "Delivered") {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Only delivered products can be returned" 
+            });
+        }
+
+        // Update the order status to Returned and add reason
+        orderItem.status = "Returned";
+        orderItem.reason = reason;
+        await order.save();
+
+        return res.status(200).json({ 
+            success: true, 
+            message: "Product return initiated successfully" 
+        });
+
+    } catch (error) {
+        console.error("Error in returning product:", error);
+        return res.status(500).json({ 
+            success: false, 
+            message: "Internal server error" 
+        });
+    }
+};
 
 module.exports={
-  getCart,
-  addToCart,
-  removeProduct,
-  updateCartQuantity,
-  cancelOrder
-}       
+    getCart,
+    addToCart,
+    removeProduct,
+    updateCartQuantity,
+    cancelOrder,
+    cancelEntireOrder,
+    returnProduct
+}

@@ -1,97 +1,147 @@
-const Coupon=require("../../models/couponSchema");
+const Coupon = require("../../models/couponSchema");
 
-const mongoose=require("mongoose");
-
-const loadCoupon=async (req,res)=>{
+const loadCoupon = async (req, res) => {
   try {
-    const findCoupon=await Coupon.find({})
-    return res.render("coupon",{coupons:findCoupon})
+    const coupons = await Coupon.find();
+    res.render("admin/coupon", { coupons });
   } catch (error) {
-    return res.redirect("/pageerror")
+    console.error("Error loading coupons:", error);
+    res.status(500).send("Internal Server Error");
   }
-}
+};
 
-const createCoupon=async(req,res)=>{
+const createCoupon = async (req, res) => {
   try {
-    const data={
-      couponName:req.body.couponName,
-      startDate:new Date(req.body.startDate+"T00:00:00"),
-      endDate:new Date(req.body.endDate+"T00:00:00"),
-      offerPrice:parseInt(req.body.offerPrice),
-      minimumPrice:parseInt(req.body.minimumPrice),
-    }
-    const newCoupon=new Coupon({
-      name:data.couponName,
-      createdOn:data.startDate,
-      expireOn:data.endDate,
-      offerPrice:data.offerPrice,
-      minimumPrice:data.minimumPrice
+    const { couponName, startDate, endDate, offerPrice, minimumPrice } = req.body;
+
+    const newCoupon = new Coupon({
+      name: couponName,
+      createdOn: startDate,
+      expireOn: endDate,
+      offerPrice: offerPrice,
+      minimumPrice: minimumPrice,
+      isListed: true
     });
-    await newCoupon.save()
-    return res.redirect("/admin/coupon");
-  } catch (error) {
-    res.redirect("/pageerror")
-  }
-}
 
-const editCoupon=async (req,res)=>{
-  try {
-    const id=req.query.id;
-    console.log(id);
-    const findCoupon= await Coupon.findOne({_id:id});
-    res.render("edit-coupon",{
-      findCoupon:findCoupon,
-    })
+    await newCoupon.save();
+    res.redirect("/admin/coupon");
   } catch (error) {
-    res.redirect("/pageerror")
+    console.error("Error creating coupon:", error);
+    res.status(500).json({ success: false, message: "Failed to create coupon" });
   }
-}
+};
 
-const updateCoupon=async (req,res)=>{
+const editCoupon = async (req, res) => {
   try {
-    couponId=req.bodyy.couponId;
-    const oid=new mongoose.Types.ObjectId(couponId);
-    const selectedCoupon=await Coupon.findOne({_id:oid});
-    if(selectedCoupon){
-      const startDate=new Date(req.body.startDate);
-      const endDate= new Date(req.body.endDate);
-      const updatedCoupon=await Coupon.updateOne(
-        {_id:oid},
-        {$set:{
-          name:req.body.couponName,
-          createdOn:startDate,
-          expireOn:endDate,
-          offerPrice:parseInt(req.body.offerPrice),
-          minimumPrice:parseInt(req.body.minimumPrice),
-        },
-      },{new:true}
-      );
-      if(updatedCoupon!==null){
-        res.send("Coupon update sucesfully");
-      }else{
-        res.status(500).send("Coupon uopdate failed");
-      }
+    const id = req.query.id;
+    if (!id) {
+      console.error("No coupon ID provided");
+      return res.status(400).send("Coupon ID is required");
     }
-  } catch (error) {
-    res.redirect("/pageerror")
-  }
-}
 
-const deleteCoupon=async (req,res)=>{
-  try {
-    const id=req.query.id;
-    await Coupon.deleteOne({_id:id});
-    res.status(200).send({success:true,message:"Coupon delete successfully"});
+    console.log("Finding coupon with ID:", id);
+    const findCoupon = await Coupon.findById(id);
     
+    if (!findCoupon) {
+      console.error("Coupon not found with ID:", id);
+      return res.status(404).send("Coupon not found");
+    }
+
+    console.log("Found coupon:", findCoupon);
+    res.render("admin/edit-coupon", { findCoupon });
   } catch (error) {
-    console.error("Error deleting coupon:",error);
-    res.status(500).send({success:false,message:"Failed to delete coupon"})
+    console.error("Error loading edit coupon page:", error);
+    res.status(500).send("Internal Server Error");
   }
-}
-module.exports={
+};
+
+const updateCoupon = async (req, res) => {
+  try {
+    const { couponId, couponName, startDate, endDate, offerPrice, minimumPrice } = req.body;
+    console.log("Update request body:", req.body);
+
+    if (!couponId) {
+      return res.status(400).json({
+        success: false,
+        message: "Coupon ID is required"
+      });
+    }
+
+    const updatedCoupon = await Coupon.findByIdAndUpdate(
+      couponId,
+      {
+        name: couponName,
+        createdOn: startDate,
+        expireOn: endDate,
+        offerPrice: offerPrice,
+        minimumPrice: minimumPrice
+      },
+      { new: true }
+    );
+
+    if (!updatedCoupon) {
+      console.error("Coupon not found for update:", couponId);
+      return res.status(404).json({
+        success: false,
+        message: "Coupon not found"
+      });
+    }
+
+    console.log("Coupon updated successfully:", updatedCoupon);
+    res.json({
+      success: true,
+      message: "Coupon updated successfully"
+    });
+  } catch (error) {
+    console.error("Error updating coupon:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update coupon"
+    });
+  }
+};
+
+const deleteCoupon = async (req, res) => {
+  try {
+    const { couponId } = req.body;
+    console.log("Delete request body:", req.body);
+    
+    if (!couponId) {
+      console.error("No coupon ID provided for deletion");
+      return res.status(400).json({ 
+        success: false, 
+        message: "Coupon ID is required" 
+      });
+    }
+
+    const deletedCoupon = await Coupon.findByIdAndDelete(couponId);
+    
+    if (!deletedCoupon) {
+      console.error("Coupon not found for deletion:", couponId);
+      return res.status(404).json({ 
+        success: false, 
+        message: "Coupon not found" 
+      });
+    }
+
+    console.log("Coupon deleted successfully:", deletedCoupon);
+    res.status(200).json({
+      success: true,
+      message: "Coupon deleted successfully"
+    });
+  } catch (error) {
+    console.error("Error deleting coupon:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete coupon"
+    });
+  }
+};
+
+module.exports = {
   loadCoupon,
   createCoupon,
   editCoupon,
   updateCoupon,
   deleteCoupon
-}
+};

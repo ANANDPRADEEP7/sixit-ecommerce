@@ -109,59 +109,72 @@ const editCategory = async (req, res) => {
   }
 };
 
-const addCategoryOffer=async (req,res)=>{
-  try {
-    const percentage=parseInt(req.body.percentage);
-    const categoryId=req.body.categoryId;
-    const category=await Category.findById(categoryId);
-    if(!category){
-      return res.stutus(404).json({status:false,message:"Category not found"});
-    }
-    const products= await Product.find({category:category._id});
-    const hasProductOffer=products.some((product)=>product.productOffer>percentage);
-    if(!hasProductOffer){
-       return res.json({status:false ,message:"Product within this category already have product offers"});
+const addCategoryOffer = async (req, res) => {
+    try {
+        const percentage = parseInt(req.body.percentage);
+        const categoryId = req.body.categoryId;
 
-    }
-    await Category.updateOne({_id:categoryId},{$set:{categoryOffer:percentage}});
-    
-    for(const product of products){
-      product.productOffer=0;
-      product.salePrice=product.regularPrice;
-      await product.save();
-    }
+        if (!categoryId || !percentage) {
+            return res.status(400).json({ success: false, message: "Category ID and percentage are required" });
+        }
 
-    res.json({status:true});
-  } catch (error) {
-    res.status(500).json({status:false , message:"Internal Server Error"});    
-  }
-}
+        // Validate percentage
+        if (isNaN(percentage) || percentage < 1 || percentage > 99) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Offer percentage must be between 1 and 99" 
+            });
+        }
 
-const removeCategoryOffer=async (req,res)=>{
-  try {
-    const categoryId=req.body.categoryId;
-    const category=await Category.findById(categoryId);
+        const category = await Category.findById(categoryId);
+        if (!category) {
+            return res.status(404).json({ success: false, message: "Category not found" });
+        }
 
-    if(!category){
-      return res.status(404).json({status:false , message:"Category not found"})
+        // Check if any products in this category have product offers
+        const products = await Product.find({ category: categoryId });
+        const productsWithOffers = products.filter(product => product.productOffer > 0);
+        
+        if (productsWithOffers.length > 0) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Cannot add category offer when products have individual offers" 
+            });
+        }
+
+        // Add the category offer
+        category.categoryOffer = percentage;
+        await category.save();
+
+        return res.json({ success: true, message: "Category offer added successfully" });
+    } catch (error) {
+        console.error("Error in addCategoryOffer:", error);
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
-    const percentage=category.categoryOffer;
-    const products=await Product.find({category:category._id});
+};
 
-    if(products.lenggth>0){
-      for(const  product of products){
-        product.salePrice += Math.floor(product.regularPrice *(percentage/100));
-        product.productOffer=0;
-        await product.save();
-      }
+const removeCategoryOffer = async (req, res) => {
+    try {
+        const { categoryId } = req.body;
+        if (!categoryId) {
+            return res.status(400).json({ success: false, message: "Category ID is required" });
+        }
+
+        const category = await Category.findById(categoryId);
+        if (!category) {
+            return res.status(404).json({ success: false, message: "Category not found" });
+        }
+
+        // Remove the category offer
+        category.categoryOffer = 0;
+        await category.save();
+
+        return res.json({ success: true, message: "Category offer removed successfully" });
+    } catch (error) {
+        console.error("Error in removeCategoryOffer:", error);
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
-    category.categoryOffer=0;
-    await category.save();
-    res.json({status:true});
-  } catch (error) {
-    res.status(500).json({sucess:false , message:"Internal Server Error"})
-  }
-}
+};
 
 module.exports = {
   categoryInfo,

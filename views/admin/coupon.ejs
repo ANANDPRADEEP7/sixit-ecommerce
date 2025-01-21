@@ -59,7 +59,7 @@
    <div class="card-body">
      <div class="row">
        <div class="col-md-3">
-         <form method="post" action="/admin/createCoupon">
+         <form id="coupon-form" method="post" action="/admin/coupon" onsubmit="return validateForm(event)">
            <body onload="setDefaultStartDate()"></body>
              <div class="mb-4">
                <label for="coupon-name" class="form-label">Coupon Name</label>
@@ -129,7 +129,6 @@
              <div class="d-grid">
                <button
                  class="btn btn-primary mt-20"
-                 onclick="return validateForm(event)"
                  type="submit"
                >
                  Add Coupon
@@ -159,14 +158,16 @@
                          <td class="text-start"><%=coupons[i].name%></td>
                          <td class="text-start"><%=new Date(coupons[i].createdOn).toLocaleDateString('en-US')%></td>
                          <td class="text-start"><%=new Date(coupons[i].expireOn).toLocaleDateString('en-US')%></td>
-                         <td class="text-start"><%=coupons[i].offerPrice%></td>
-                         <td class="text-start"><%=coupons[i].minimumPrice%></td>
-                         <td class="text-start"><%=coupons[i].isListed%></td>
+                         <td class="text-start">₹<%=coupons[i].offerPrice%></td>
+                         <td class="text-start">₹<%=coupons[i].minimumPrice%></td>
                          <td class="text-start">
-                             <a href="/admin/editCoupon?id=<%=coupons[i]._id%>" class="btn btn-primary btn-sm" >Edit</a>
-
-
-                           <a href="#" onclick="confirmDelete('<%=coupons[i]._id%>')" class="btn btn-danger btn-sm" style="height: 35px;width: 105px;">Delete</a>
+                           <span class="badge <%= coupons[i].isListed ? 'bg-success' : 'bg-danger' %>">
+                             <%= coupons[i].isListed ? 'Active' : 'Inactive' %>
+                           </span>
+                         </td>
+                         <td class="text-start">
+                             <a href="/admin/editCoupon?id=<%=coupons[i]._id%>" class="btn btn-primary btn-sm">Edit</a>
+                             <button onclick="confirmDelete('<%=coupons[i]._id%>')" class="btn btn-danger btn-sm">Delete</button>
                          </td>
                      </tr>
                      <%}%>
@@ -179,122 +180,125 @@
  </div>
 </section>
 
-
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
- function validateForm() {
-   document.querySelectorAll(".error-message").forEach((element) => (element.innerHTML = ""));
-   const sDate = document.getElementsByName("startDate")[0].value;
-   const eDate = document.getElementsByName("endDate")[0].value;
-   const sDateObj = new Date(sDate);
-   const eDateObj = new Date(eDate);
-   const todayDateObj = new Date();
-   todayDateObj.setHours(0, 0, 0, 0);
-
-
-   if (sDateObj > eDateObj) {
-     document.getElementById("error-end-date").innerHTML ="End date should be after the start date";
-     return false;
-   }
-
-
-   if (sDateObj <= todayDateObj) {
-     document.getElementById("error-start-date").innerHTML ="Starting date should be greater than or equal to today's date";
-     return false;
-   }
-
-
-   let name = document.getElementsByName("couponName")[0].value;
-   const nameRegex = /^[A-Za-z0-9]{1,50}$/;
-
-
-   if (!nameRegex.test(name)) {
-     document.getElementById("error-coupon-name").innerHTML =
-       "Coupon Name error";
-     return false;
-   }
-
-
-   const offerPriceInput = document.getElementsByName("offerPrice")[0];
-   const minimumPriceInput = document.getElementsByName("minimumPrice")[0];
-
-
-   const offerPrice = offerPriceInput.value.trim() !== ""? parseInt(offerPriceInput.value): NaN;
-   const minimumPrice = minimumPriceInput.value.trim() !== ""? parseInt(minimumPriceInput.value): NaN;
-
-
-   if (isNaN(offerPrice) || isNaN(minimumPrice) || offerPrice >= minimumPrice) {
-     document.getElementById("error-offer-price").innerHTML = "Offer Price must be greater than Minimum Price";
-     return false;
-   }
-
-
-   if (isNaN(offerPrice) || isNaN(minimumPrice)) {
-     document.getElementById("error-offer-price").innerHTML ="Please enter numeric values for Offer Price and Minimum Price";
-     return false;
-   }
-
-
-       const formData = {
-       couponName: name,
-       startDate: sDateObj,
-       endDate: eDateObj,
-       offerPrice: offerPrice,
-       minimumPrice: minimumPrice
-   };
-   return true;
- }
-
-
 function confirmDelete(couponId) {
-   Swal.fire({
-     title: "Are you sure?",
-     text: "You won't be able to revert this!",
-     icon: "warning",
-     showCancelButton: true,
-     confirmButtonColor: "#d33",
-     cancelButtonColor: "#3085d6",
-     confirmButtonText: "Yes, delete it!",
-   }).then((result) => {
-     if (result.isConfirmed) {
-       deleteCoupon(couponId);
-     }
-   });
- }
+    Swal.fire({
+        title: 'Delete Coupon',
+        text: 'Are you sure you want to delete this coupon?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '/admin/deleteCoupon',
+                method: 'POST',
+                data: { couponId: couponId },
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Deleted!',
+                            text: response.message,
+                            showConfirmButton: false,
+                            timer: 1500
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        throw new Error(response.message || 'Failed to delete coupon');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Delete error:', error);
+                    console.error('Response:', xhr.responseText);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error!',
+                        text: 'Failed to delete coupon. Please try again.',
+                    });
+                }
+            });
+        }
+    });
+}
 
+function validateForm(event) {
+    event.preventDefault();
+    const form = document.getElementById('coupon-form');
+    const formData = new FormData(form);
+    
+    // Clear previous error messages
+    document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+    
+    // Validate coupon name
+    const couponName = formData.get('couponName');
+    if (!couponName || !/^[A-Za-z0-9]{1,50}$/.test(couponName)) {
+        document.getElementById('error-coupon-name').textContent = 'Invalid coupon name. Use only letters and numbers (1-50 characters)';
+        return false;
+    }
+    
+    // Validate dates
+    const startDate = new Date(formData.get('startDate'));
+    const endDate = new Date(formData.get('endDate'));
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (startDate < today) {
+        document.getElementById('error-start-date').textContent = 'Start date must be today or later';
+        return false;
+    }
+    
+    if (endDate <= startDate) {
+        document.getElementById('error-end-date').textContent = 'End date must be after start date';
+        return false;
+    }
+    
+    // Validate prices
+    const offerPrice = parseInt(formData.get('offerPrice'));
+    const minimumPrice = parseInt(formData.get('minimumPrice'));
+    
+    if (isNaN(offerPrice) || offerPrice <= 0) {
+        document.getElementById('error-offer-price').textContent = 'Offer price must be a positive number';
+        return false;
+    }
+    
+    if (isNaN(minimumPrice) || minimumPrice <= 0) {
+        document.getElementById('error-minimum-price').textContent = 'Minimum price must be a positive number';
+        return false;
+    }
+    
+    if (offerPrice >= minimumPrice) {
+        document.getElementById('error-offer-price').textContent = 'Offer price must be less than minimum price';
+        return false;
+    }
+    
+    // If all validations pass, submit the form
+    form.submit();
+    return true;
+}
 
- function deleteCoupon(couponId) {
-   $.ajax({
-     url: `/admin/deletecoupon?id=${couponId}`,
-     method: "GET",
-     success: function () {
-       Swal.fire({
-         icon: "success",
-         title: "Deleted!",
-         text: "The coupon has been deleted.",
-         confirmButtonText: "OK",
-       }).then(() => {
-         window.location.reload();
-       });
-     },
-     error: function () {
-       Swal.fire({
-         icon: "error",
-         title: "Error!",
-         text: "Failed to delete the coupon. Please try again.",
-       });
-     },
-   });
- }
-
-
-
- function setDefaultStartDate(){
-  const today=new Date();
-  const year=today.getFullYear();
-  let month=(today.getMonth()+1).toString().padStart(2,"0");
-  let day=today.getDate().toString().padStart(2,"0");
-  document.getElementById("startingDate").value=`${year}-${month}-${day}`
- }
+// Set default date for new coupon form
+window.onload = function() {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const startDateInput = document.getElementById('startingDate');
+    const endDateInput = document.getElementById('expiringDate');
+    
+    if (startDateInput && endDateInput) {
+        startDateInput.value = today.toISOString().split('T')[0];
+        endDateInput.value = tomorrow.toISOString().split('T')[0];
+    }
+};
 </script>
 <%- include("../../views/partials/admin/footer") %>
-

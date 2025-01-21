@@ -33,11 +33,13 @@ app.use((req,res,next)=>{
   res.set("cache-control","no-store")
   next()
 })
-app.set("view engine","ejs")
-app.set("views",[path.join(__dirname,'views/user'),path.join(__dirname,'views/admin')]);
-// app.use(express.static(__dirname,"public"));
+app.set("view engine", "ejs");
+app.set("views", [
+  path.join(__dirname, 'views'),
+  path.join(__dirname, 'views/admin'),
+  path.join(__dirname, 'views/user')
+]);
 app.use(express.static(path.join(__dirname, 'public')));
-
 
 app.use('/',userRouter);
 app.use('/admin',adminRouter);
@@ -46,6 +48,5 @@ const PORT = process.env.PORT;
 app.listen(PORT,()=>{
   console.log(`Server Running At ${PORT}` );
 })
-
 
 module.exports=app;

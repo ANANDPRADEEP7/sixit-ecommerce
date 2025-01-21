@@ -4,8 +4,22 @@ const Address = require("../../models/addressSchema")
 
 const orderList=async (req,res)=>{
   try {
-    const order = await Order.find().populate("userId","name email").populate("orderedItems.id","productName productImage").sort({ createdAt: -1 }); 
-    console.log("sreesanth",order);
+    const order = await Order.find()
+      .populate("userId", "name email")
+      .populate("orderedItems.id", "productName productImage")
+      .sort({ 
+        createdAt: -1,  // Sort by creation date descending
+        _id: -1         // Then by _id descending for consistent ordering
+      })
+      .exec();
+
+    // Log the order dates to verify sorting
+    console.log("Order dates:", order.map(o => ({
+      id: o._id,
+      date: o.createdAt,
+      status: o.status
+    })));
+
     res.render("orderList",{order})
   } catch (error) {
     console.error("error in load order page",error);   

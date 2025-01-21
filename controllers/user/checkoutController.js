@@ -14,31 +14,28 @@ const checkOutPage = async(req,res)=>{
       const userAddress = await Address.findOne({userId});
       const categories = await Category.find({isListed:true})
       
-
       const listedCategory = categories.map(category=> category._id.toString())
 
-      const findProduct = cart.items.filter(item=>{
+      const cartItems = cart.items.filter(item=>{
           const product = item.productId
-          
           return (product.isBlocked === false && listedCategory.includes(product.category.toString()))
       });
-      console.log(findProduct,"this is a find product");
       
-      const subTotal = findProduct.reduce((sum, items)=> sum + items.totalPrice ,0);
-      let shiipingCost =0
+      const subTotal = cartItems.reduce((sum, items)=> sum + items.totalPrice ,0);
+      let shippingCost = 0;
+      let discount = 0;
       
-      const total = subTotal + shiipingCost;
+      const total = subTotal + shippingCost;
 
       res.render("checkout", {
         user: userId,
-        cart: findProduct ? findProduct : [],
+        cart: cartItems,
         addresses: userAddress ? userAddress.address : [],
         subTotal,
         total,
-    
-    
-          
-      })
+        shippingCost,
+        discount
+      });
   } catch (error) {
       console.error("Error in showing checkout page",error);
       res.redirect("/pageNotFound")
@@ -110,79 +107,91 @@ const checkOutAddress = async (req, res) => {
 };
 
   const postCheckout = async (req, res) => {
-    console.log("heyyyy");
     try {
         const userId = req.session.user;
 
         if (!userId) {
-            return res.redirect("/login");
+            return res.status(401).json({ success: false, message: "Please login to continue" });
         }
 
         const { address, products, subtotal, total, paymentMethod } = req.body;
-        console.log(products,"this is a product details");
-
-        if (paymentMethod !== "Cash On Delivery") {
-            return res.status(400).json({ success: false, message: "Invalid payment method" });
-        }
 
         if (!Array.isArray(products) || products.length === 0) {
-            return res.status(400).json({ success: false, message: "No products provided" });
+            return res.status(400).json({ success: false, message: "No products in cart" });
         }
 
-        const groupedProducts = products.reduce((acc, item) => {
-            acc[item.id] = acc[item.id] || { ...item, quantity: 0 };
-            acc[item.id].quantity += item.quantity;
-            return acc;
-        }, {});
-        console.log(groupedProducts,"this is a group ptoduct");
+        if (!address || !address.id) {
+            return res.status(400).json({ success: false, message: "Shipping address not selected" });
+        }
 
-        for (let productId in groupedProducts) {
-            const item = groupedProducts[productId];
-            console.log(productId);
-            console.log("67768c2c8fde4de658747cbb");
-            // const product = await Product.findOne({_id:productId}); 
-            const product = await Product.findOne({ _id: new mongoose.Types.ObjectId(productId) });
-
-            console.log(product);
-
+        // Validate and update product quantities
+        for (const item of products) {
+            const product = await Product.findById(item.id);
             if (!product) {
-                return res.status(404).json({ success: false, message: `Product not found: ${productId}` });
+                return res.status(404).json({ 
+                    success: false, 
+                    message: `Product not found: ${item.name}` 
+                });
             }
 
             if (product.quantity < item.quantity) {
                 return res.status(400).json({
                     success: false,
-                    message: `Not enough stock for product: ${product.name}`,
+                    message: `Not enough stock for product: ${item.name}`,
                 });
             }
 
+            // Update product quantity
             product.quantity -= item.quantity;
             await product.save();
         }
 
+        // Create order with required fields matching schema
         const newOrder = new Order({
-            userId: userId,
-            orderedItems: products,
+            userId,
+            orderedItems: products.map(item => ({
+                id: item.id,
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price.toString(), // Convert to string as per schema
+                status: "pending"
+            })),
             shippingAddress: address,
             totalPrice: subtotal,
             finalAmount: total,
-            status: "pending",
-            paymentMethod: paymentMethod,
-            payment_status: "Pending",
+            status: "Pending",
+            paymentMethod,
+            payment_status: "Pending"
         });
 
-        await Cart.findOneAndUpdate({ userId: userId._id }, { $set: { items: [] } });
+        const savedOrder = await newOrder.save();
 
-        const orderSave = await newOrder.save();
-        if (orderSave) {
-            const orderId = newOrder._id;
-            return res.status(200).json({ success: true, message: "Order placed", orderId: orderId });
-        } else {
-            return res.status(400).json({ success: false, message: "Error saving order" });
+        if (!savedOrder) {
+            return res.status(500).json({ 
+                success: false, 
+                message: "Failed to create order" 
+            });
         }
+
+        // Clear cart after successful order
+        await Cart.findOneAndUpdate(
+            { userId },
+            { $set: { items: [] } }
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Order placed successfully",
+            orderId: savedOrder._id
+        });
+
     } catch (error) {
-        console.log("Error:", error.message);
-        return res.status(500).json({ success: false, message: "Internal server error" });
+        console.error("Checkout error:", error);
+        return res.status(500).json({ 
+            success: false, 
+            message: "Internal server error",
+            error: error.message 
+        });
     }
 };
 
