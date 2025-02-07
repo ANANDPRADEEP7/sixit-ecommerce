@@ -6,6 +6,10 @@ const nodemailer = require("nodemailer");
 const bcrypt = require("bcrypt");
 const env = require("dotenv").config();
 const session = require("express-session");
+const { getWalletDetails, getWalletHistory } = require('./walletController');
+const PDFDocument = require('pdfkit');
+const ejs = require('ejs');
+const path = require('path');
 
 function generateOtp() {
   const digit = "1234567890";
@@ -155,17 +159,36 @@ const userProfile = async (req, res) => {
     const userData = await User.findById(userId);
     const addressData = await Address.findOne({ userId: userId });
 
+    // Pagination parameters
+    const page = parseInt(req.query.page) || 1;
+    const limit = 10;
+    const skip = (page - 1) * limit;
+
+    // Get total orders count
+    const totalOrders = await Order.countDocuments({ userId: userId });
+    const totalPages = Math.ceil(totalOrders / limit);
+
     // Get orders with proper sorting
     const orderData = await Order.find({ userId: userId })
       .populate('orderedItems.id', 'productName productImage price')
-      .sort({ createdAt: -1 })
+      .sort({ createdOn: -1 })
+      .skip(skip)
+      .limit(limit)
       .lean();
+
+    // Get wallet information
+    const wallet = await getWalletDetails(req, res);
+    const walletHistory = await getWalletHistory(req, res);
 
     res.render('profile', {
       user: userData,
       userAddress: addressData,
-      orderData: orderData
-
+      orderData: orderData,
+      wallet: wallet,
+      walletHistory: walletHistory,
+      currentPage: page,
+      totalPages: totalPages,
+      query: req.query
     })
   } catch (error) {
     console.error("Error for retrieve profile data", error);
@@ -324,6 +347,12 @@ const verifyChangepassotp = async (req, res) => {
 const getOrderDetails = async (req, res) => {
   try {
     const orderId = req.params.orderId;
+    
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      console.error('Invalid order ID format');
+      return res.redirect('/userProfile');
+    }
+
     const order = await Order.findById(orderId).populate({
       path: 'orderedItems.id',
       model: 'Product',
@@ -331,31 +360,347 @@ const getOrderDetails = async (req, res) => {
     });
 
     if (!order) {
+      console.error('Order not found:', orderId);
       return res.redirect('/userProfile');
     }
 
-    res.render("orderDetails", { order });
+    // Add payment status if not present
+    if (!order.payment_status) {
+      order.payment_status = order.orderedItems[0].status === 'pending' ? 'pending' : 'completed';
+      await order.save();
+    }
+
+    // Add payment method if not present
+    if (!order.paymentMethod) {
+      order.paymentMethod = 'cod'; // default to COD if not specified
+      await order.save();
+    }
+
+    res.render("orderDetails", { 
+      order,
+      user: req.session.user 
+    });
   } catch (error) {
     console.error('Error fetching order details:', error);
     res.redirect('/userProfile');
   }
 };
 
+const downloadInvoice = async (req, res) => {
+  try {
+    const orderId = req.params.orderId;
+    const order = await Order.findById(orderId)
+      .populate('orderedItems.id');
+
+    if (!order) {
+      return res.status(404).send('Order not found');
+    }
+
+    // Create PDF document
+    const doc = new PDFDocument({margin: 50});
+
+    // Set response headers
+    res.contentType('application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=invoice-${order.orderId}.pdf`);
+
+    // Pipe the PDF to the response
+    doc.pipe(res);
+
+    // Add content to the PDF
+    // Header
+    doc.fontSize(20).text('SIXIT', {align: 'center'});
+    doc.moveDown();
+    doc.fontSize(12).text('Invoice', {align: 'center'});
+    doc.moveDown();
+
+    // Format date
+    const orderDate = new Date(order.createdOn);
+    const formattedDate = orderDate.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+    });
+
+    // Order Information
+    doc.fontSize(10)
+       .text(`Order ID: ${order.orderId}`)
+       .text(`Date: ${formattedDate}`)
+       .text(`Status: ${order.status || 'Processing'}`);
+    
+    doc.moveDown();
+
+    // Shipping Address
+    doc.fontSize(12).text('Shipping Address:', {underline: true});
+    doc.fontSize(10)
+       .text(order.shippingAddress.name)
+       .text(order.shippingAddress.addressType)
+       .text(order.shippingAddress.landmark)
+       .text(`${order.shippingAddress.city}, ${order.shippingAddress.state}`)
+       .text(`PIN: ${order.shippingAddress.pincode}`)
+       .text(`Phone: ${order.shippingAddress.phone}`);
+
+    doc.moveDown();
+
+    // Items Table
+    doc.fontSize(12).text('Order Items:', {underline: true});
+    doc.moveDown();
+
+    // Table headers
+    let y = doc.y;
+    doc.fontSize(10)
+       .text('Item', 50, y)
+       .text('Quantity', 250, y)
+       .text('Price', 350, y)
+       .text('Total', 450, y);
+
+    doc.moveDown();
+    y = doc.y;
+
+    // Draw a line
+    doc.moveTo(50, y).lineTo(550, y).stroke();
+    doc.moveDown();
+
+    // Table rows
+    order.orderedItems.forEach(item => {
+        y = doc.y;
+        const itemPrice = parseFloat(item.price);
+        const itemTotal = itemPrice * item.quantity;
+        
+        doc.fontSize(10)
+           .text(item.name, 50, y)
+           .text(item.quantity.toString(), 250, y)
+           .text(`₹${itemPrice.toFixed(2)}`, 350, y)
+           .text(`₹${itemTotal.toFixed(2)}`, 450, y);
+        doc.moveDown();
+    });
+
+    // Draw a line
+    y = doc.y;
+    doc.moveTo(50, y).lineTo(550, y).stroke();
+    doc.moveDown();
+
+    // Calculate totals
+    const subtotal = order.totalPrice;
+    const discount = order.discount || 0;
+    const finalAmount = parseFloat(order.finalAmount);
+
+    // Total section
+    doc.fontSize(12)
+       .text(`Subtotal: ₹${subtotal.toFixed(2)}`, {align: 'right'});
+    
+    if (discount > 0) {
+        doc.text(`Discount: ₹${discount.toFixed(2)}`, {align: 'right'});
+    }
+    
+    doc.text(`Final Amount: ₹${finalAmount.toFixed(2)}`, {align: 'right'});
+
+    // Footer
+    doc.fontSize(10)
+       .text('Thank you for shopping with SIXIT!', 50, doc.page.height - 100, {
+           align: 'center',
+           width: doc.page.width - 100
+       });
+
+    // Finalize the PDF
+    doc.end();
+
+  } catch (error) {
+    console.error('Error generating invoice:', error);
+    res.status(500).send('Error generating invoice');
+  }
+};
+
+const getProfilePage = async (req, res) => {
+    try {
+        if (!req.session.user) {
+            return res.redirect('/login');
+        }
+
+        const userId = req.session.user;
+        
+        // Get user data
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.redirect('/login');
+        }
+
+        // Get address data
+        const userAddress = await Address.findOne({ userId: userId });
+
+        // Pagination parameters
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const skip = (page - 1) * limit;
+
+        // Get total orders count
+        const totalOrders = await Order.countDocuments({ userId: userId });
+        const totalPages = Math.ceil(totalOrders / limit);
+
+        // Get orders with pagination and sorting
+        const orderData = await Order.find({ userId: userId })
+            .populate('orderedItems.id', 'productName productImage price')
+            .sort({ createdOn: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
+
+        // Get wallet information
+        const wallet = await getWalletDetails(req, res);
+        const walletHistory = await getWalletHistory(req, res);
+
+        res.render('user/profile', {
+            user,
+            userAddress,
+            orderData,
+            wallet,
+            walletHistory,
+            currentPage: page,
+            totalPages: totalPages,
+            query: req.query
+        });
+    } catch (error) {
+        console.error('Error loading profile page:', error);
+        res.status(500).send('Error loading profile page');
+    }
+};
+
+const getEditProfilePage = async (req, res) => {
+    try {
+        const user = await User.findById(req.session.user._id);
+        res.render('user/editProfile', { user });
+    } catch (error) {
+        console.error('Error loading edit profile page:', error);
+        res.status(500).send('Error loading edit profile page');
+    }
+};
+
+const editProfile = async (req, res) => {
+    try {
+        const { name, email, phone } = req.body;
+        await User.findByIdAndUpdate(req.session.user._id, { name, email, phone });
+        res.redirect('/profile');
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        res.status(500).send('Error updating profile');
+    }
+};
+
+const getAddressPage = async (req, res) => {
+    try {
+        const addresses = await Address.find({ user: req.session.user._id });
+        res.render('user/address', { addresses });
+    } catch (error) {
+        console.error('Error loading address page:', error);
+        res.status(500).send('Error loading address page');
+    }
+};
+
+const getEditAddressPage = async (req, res) => {
+    try {
+        const address = await Address.findById(req.query.id);
+        res.render('user/editAddress', { address });
+    } catch (error) {
+        console.error('Error loading edit address page:', error);
+        res.status(500).send('Error loading edit address page');
+    }
+};
+
+const getOrdersPage = async (req, res) => {
+  try {
+    const userId = req.session.user;
+    const page = parseInt(req.query.page) || 1;
+    const itemsPerPage = 5;
+
+    // Get orders with pagination, sorted by latest first
+    const orderData = await Order.find({ userId: userId })
+      .populate('orderedItems.id', 'productName productImage price')
+      .sort({ createdOn: -1, _id: -1 }) // Sort by createdOn first, then by _id for same timestamps
+      .lean();
+
+    // Add formatted date to each order
+    orderData.forEach(order => {
+      order.formattedDate = new Date(order.createdOn).toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    });
+
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const totalPages = Math.ceil(orderData.length / itemsPerPage);
+    const paginatedOrders = orderData.slice(startIndex, endIndex);
+
+    res.json({
+      orders: paginatedOrders,
+      currentPage: page,
+      totalPages: totalPages
+    });
+  } catch (error) {
+    console.error("Error retrieving orders:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const getOrdersData = async (req, res) => {
+    try {
+        if (!req.session.user) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
+
+        const userId = req.session.user;
+        const page = parseInt(req.query.page) || 1;
+        const limit = 10;
+        const skip = (page - 1) * limit;
+
+        // Get total orders count
+        const totalOrders = await Order.countDocuments({ userId: userId });
+        const totalPages = Math.ceil(totalOrders / limit);
+
+        // Get orders with pagination and sorting
+        const orderData = await Order.find({ userId: userId })
+            .populate('orderedItems.id', 'productName productImage price')
+            .sort({ createdOn: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
+
+        res.json({
+            orders: orderData,
+            currentPage: page,
+            totalPages: totalPages
+        });
+    } catch (error) {
+        console.error('Error fetching orders:', error);
+        res.status(500).json({ error: 'Error fetching orders' });
+    }
+};
+
 module.exports = {
-  getForgotPassPage,
-  forgotEmailValid,
-  verifyForgotPassOtp,
-  getResetPassPage,
-  resendOtp,
-  postNewPassword,
-  userProfile,
-  addAddress,
-  postAddAddress,
-  editAddress,
-  postEditAddress,
-  deleteAddress,
-  changePassword,
-  changePasswordValid,
-  verifyChangepassotp,
-  getOrderDetails
+    getForgotPassPage,
+    forgotEmailValid,
+    verifyForgotPassOtp,
+    getResetPassPage,
+    resendOtp,
+    postNewPassword,
+    userProfile,
+    addAddress,
+    postAddAddress,
+    editAddress,
+    postEditAddress,
+    deleteAddress,
+    changePassword,
+    changePasswordValid,
+    verifyChangepassotp,
+    getProfilePage,
+    getOrdersData,
+    getEditProfilePage,
+    editProfile,
+    getAddressPage,
+    getEditAddressPage,
+    getOrdersPage,
+    getOrderDetails,
+    downloadInvoice
 }

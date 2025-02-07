@@ -1,12 +1,11 @@
 const User = require("../../models/userSchema");
 const Product = require("../../models/productSchema");
 const Cart = require("../../models/cartSchema");
-const Category=require('../../models/categorySchema');
-const Order=require("../../models/orderSchema")
+const Category = require('../../models/categorySchema');
+const Order = require("../../models/orderSchema");
 const { productDetails } = require("./productController");
 const mongoose = require("mongoose");
-
-
+const walletController = require('./walletController');
 
 const getCart = async (req, res) => {
   try {
@@ -37,67 +36,6 @@ const getCart = async (req, res) => {
   }
 };
 
-// const addToCart = async (req, res) => {
-//   try {
-//       const productId = req.body.productId;
-//       console.log('asdfghjkl;',productId);
-//       const userId = req.session.user;
-//       const cartLimit = 5;
-
-//       let cart = await Cart.findOne({ userId });
-//       if (!cart) {
-//           cart = new Cart({ userId, items: [] });
-//       }
-
-//       const product = await Product.findById(productId)
-//       console.log("product",product);
-//       if(!product){
-//           return res.status(404).json({status:false, message:"product not found"})
-//       }
-    
-
-//       if(product.quantity <= 0){
-//           return res.status(400).json({status:false, message:"Product is out of stock..!"})
-//       }
-      
-//       const productInCart = cart.items.find((item) => item.productId.toString() === productId);
-//       console.log("pro cart",productInCart);
-
-      
-
-//       const updatedPrice = product.salePrice * p;
-//       console.log("updated price-",updatedPrice)
-
-//       if (productInCart) {
-//          if(productInCart.quantity >= cartLimit){
-//           return res.status(200).json({status:false, message:"Maximum quantity add this product to cart is reached...!"})
-//          }
-
-//          productInCart.quantity +=1;
-//          productInCart.totalPrice = productInCart.price * productInCart.quantity;
-        
-//       }else{
-         
-//           cart.items.push({
-//               productId,
-//               price:product.salePrice,
-//               totalPrice:updatedPrice,
-//               quantity:1
-//           })
-
-//           // product.quantity -=1;
-//       }
-
-//       // await product.save();
-//       await cart.save();
-//       console.log("Product added to cart successfully");
-//       return res.status(200).json({ status: true, message: "Product added to Cart Successfully." });
-//   } catch (error) {
-//       console.error("Error in add to cart", error);
-//       return res.status(500).json({ status: false, message: "Server Error!" });
-//   }
-// };
-
 const addToCart = async (req, res) => {
     try {
       const { productId } = req.body;
@@ -110,11 +48,9 @@ const addToCart = async (req, res) => {
         return res.status(404).json({ status: false, message: "Product not found" });
       }
   
-      if (product.quantity <= 0) {
+      if (product.available_quantity <= 0) {
         return res.status(400).json({ status: false, message: "Product is out of stock!" });
       }
-
-      
   
       // Find or create a cart for the user
       let cart = await Cart.findOne({ userId });
@@ -132,64 +68,52 @@ const addToCart = async (req, res) => {
         }
   
         const qtyToAdd = 1; // Default increment
-        if (product.quantity < qtyToAdd) {
+        if (product.available_quantity < productInCart.quantity + qtyToAdd) {
           return res.status(400).json({ status: false, message: "Not enough stock to add more of this product." });
         }
   
         productInCart.quantity += qtyToAdd;
         productInCart.totalPrice = productInCart.price * productInCart.quantity;
-        
-        if(productInCart.quantity>3){
-            return res.status(400).json({ status: false, message: "Product is out of stock!" });
-        }
-       
       } else {
         // Add new product to the cart
-        if (product.quantity < 1) {
+        if (product.available_quantity < 1) {
           return res.status(400).json({ status: false, message: "Not enough stock to add this product to the cart." });
         }
   
         cart.items.push({
           productId,
           price: product.salePrice || product.price,
-          totalPrice: product.salePrice || product.price, // Initial totalPrice is the same as price
+          totalPrice: product.salePrice || product.price,
           quantity: 1,
         });
-  
-  
       }
   
-      // Save the updates
-      await product.save();
+      // Save the cart
       await cart.save();
   
-      return res.status(200).json({ status: true, message: "Product added to Cart Successfully." });
+      // Return success response
+      return res.status(200).json({ status: true, message: "Product added to cart successfully" });
     } catch (error) {
-      console.error("Error in addToCart:", error);
-      return res.status(500).json({ status: false, message: "Server Error!" });
+      console.error("Error adding to cart:", error);
+      return res.status(500).json({ status: false, message: "An error occurred while adding to cart" });
     }
-  };
-  
+};
 
 const removeProduct = async (req, res) => {
   try {
       const productId = req.query.productId;
       const userId = req.session.user;
 
-    //   console.log("productId:", productId);
-    //     console.log("userId:", userId);
-
+   
       const cart = await Cart.findOne({ userId });
-    //   console.log("cartttttttttttttttttt:", cart);
+  
 
-      if (!cart) {
+      if (!cart) {     
           return res.redirect("/cart");
       }
 
       const findProduct = cart.items.find((item)=> item.productId.toString() === productId)
-    //   console.log("findProductss", findProduct);
-    //   console.log("cart.itemssss:", cart.items);
-
+   
 
       
 
@@ -197,13 +121,13 @@ const removeProduct = async (req, res) => {
 
       cart.items = cart.items.filter((item) => item.productId.toString() !== productId);
 
-    //   console.log("Updated cart items:", cart.items);
+   
       await cart.save();
       
 
 
       await Product.findByIdAndUpdate(productId,{$inc:{quantity:removeQty}}) 
-    //   console.log("Updating product quantity:", productId, removeQty);
+  
    
 
       return res.redirect("/getCart");
@@ -216,7 +140,7 @@ const removeProduct = async (req, res) => {
 const updateCartQuantity = async(req,res)=>{
   try {
       const {productId, quantity} = req.body;
-      console.log("quantity-",quantity);
+    
       
       const userId = req.session.user;
       const limit = 5;
@@ -231,7 +155,7 @@ const updateCartQuantity = async(req,res)=>{
           return res.status(404).json({ status: false, message: "Product not found!" });
       }
 
-      console.log("product--",product)
+    
 
       const findProduct = cart.items.find((item)=> item.productId.toString() === productId);
       if(!findProduct){
@@ -239,7 +163,7 @@ const updateCartQuantity = async(req,res)=>{
       }
 
 
-      console.log("find item:",findProduct)
+   
 
       if(quantity > limit){
           return res.status(400).json({status:false, message:"Quantity not exceed 5."})
@@ -269,50 +193,86 @@ const updateCartQuantity = async(req,res)=>{
 }
 
 const cancelOrder = async (req, res) => {
-    try {
-        const orderId = req.params.orderId;
-        const productId = req.params.productId;
-        const { reason } = req.body;
-        const userId = req.session.user;
+  try {
+    const { orderId, productId } = req.params;
+    const userId = req.session.user;
 
-        const order = await Order.findOne({ _id: orderId, userId });
-
-        if (!order) {
-            return res.status(404).json({ success: false, message: "Order not found" });
-        }
-
-        const orderItem = order.orderedItems.find(
-            item => item.id.toString() === productId
-        );
-
-        if (!orderItem) {
-            return res.status(404).json({ success: false, message: "Product not found in order" });
-        }
-
-        if (orderItem.status === "Delivered" || orderItem.status === "Cancelled") {
-            return res.status(400).json({
-                success: false,
-                message: "Cannot cancel order in current status"
-            });
-        }
-
-        // Update status to cancelled and add reason
-        orderItem.status = "Cancelled";
-        orderItem.reason = reason;
-        await order.save();
-
-        return res.status(200).json({
-            success: true,
-            message: "Order cancelled successfully"
-        });
-
-    } catch (error) {
-        console.error("Error in cancelling order:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Internal server error"
-        });
+    if (!mongoose.Types.ObjectId.isValid(orderId) || !mongoose.Types.ObjectId.isValid(productId)) {
+      return res.status(400).json({ success: false, message: "Invalid orderId or productId." });
     }
+
+    const order = await Order.findOne({ _id: orderId, userId });
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found or does not belong to the user." });
+    }
+
+    const orderItem = order.orderedItems.find(
+      item => item.id.toString() === productId
+    );
+
+    if (!orderItem) {
+      return res.status(404).json({ success: false, message: "Product not found in order." });
+    }
+
+    if (orderItem.status === "Shipped" || orderItem.status === "Delivered") {
+      return res.status(400).json({ success: false, message: "Cannot cancel order. Product has already been shipped or delivered." });
+    }
+
+    if (orderItem.status === "Cancelled") {
+      return res.status(400).json({ success: false, message: "Product is already cancelled." });
+    }
+
+    // Calculate refund amount
+    const refundAmount = orderItem.price * orderItem.quantity;
+
+    // Update product status to Cancelled
+    orderItem.status = "Cancelled";
+    
+    // Restore product quantity
+    await Product.findByIdAndUpdate(
+      productId,
+      { $inc: { quantity: orderItem.quantity } }
+    );
+
+    // Save order first to ensure status is updated
+    await order.save();
+
+    // Credit the amount to wallet
+    try {
+      const walletResponse = await walletController.useWalletBalance(
+        userId, 
+        refundAmount, 
+        `Amount credited for cancelled product from order #${orderId}`, 
+        'credit'
+      );
+      
+      if (!walletResponse.success) {
+        console.error("Wallet credit failed:", walletResponse.message);
+        return res.status(500).json({ 
+          success: false, 
+          message: "Failed to credit amount to wallet. Please contact support." 
+        });
+      }
+    } catch (walletError) {
+      console.error("Error crediting to wallet:", walletError);
+      return res.status(500).json({ 
+        success: false, 
+        message: "Failed to credit amount to wallet. Please contact support." 
+      });
+    }
+
+    return res.status(200).json({ 
+      success: true, 
+      message: "Product cancelled successfully and amount credited to wallet"
+    });
+
+  } catch (error) {
+    console.error("Error canceling order:", error);
+    return res.status(500).json({ 
+      success: false, 
+      message: "Failed to cancel the order. Please try again later." 
+    });
+  }
 };
 
 const cancelEntireOrder = async (req, res) => {
@@ -320,8 +280,6 @@ const cancelEntireOrder = async (req, res) => {
     const { orderId } = req.params;
     const userId = req.session.user;
 
-    console.log("Order ID:", orderId);
-    console.log("User ID from session:", userId);
 
     if (!mongoose.Types.ObjectId.isValid(orderId)) {
       return res.status(400).json({ error: "Invalid orderId." });
@@ -389,14 +347,32 @@ const returnProduct = async (req, res) => {
             });
         }
 
+        // Calculate refund amount based on the final amount
+        const refundAmount = parseFloat(order.finalAmount);
+
+        // Add refund to wallet
+        await walletController.useWalletBalance(
+            userId, 
+            refundAmount, 
+            `Refund for returned product from order #${orderId}`, 
+            'credit'
+        );
+
         // Update the order status to Returned and add reason
         orderItem.status = "Returned";
         orderItem.reason = reason;
+        orderItem.refundAmount = refundAmount; // Store the actual refunded amount
         await order.save();
+
+        // Update product quantity
+        await Product.findByIdAndUpdate(
+            productId,
+            { $inc: { quantity: orderItem.quantity } }
+        );
 
         return res.status(200).json({ 
             success: true, 
-            message: "Product return initiated successfully" 
+            message: `Product returned and refund of ₹${refundAmount.toFixed(2)} initiated successfully` 
         });
 
     } catch (error) {

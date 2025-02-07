@@ -33,6 +33,17 @@ router.get("/pageerror",adminController.pageerror)
 router.get("/login",adminController.loadLogin);
 router.post("/login",adminController.login);
 router.get("/",adminAuth,adminController.loadDashboard);
+// Sales data endpoint
+router.get('/sales-data', adminAuth, async (req, res) => {
+  try {
+    const period = req.query.period || 'monthly';
+    const data = await adminController.getSalesData(period);
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching sales data:', error);
+    res.status(500).json({ error: 'Failed to fetch sales data' });
+  }
+});
 router.get("/logout",adminController.logout);
 // Customers Management
 router.get("/users",adminAuth,customerController.customerInfo);
@@ -51,11 +62,8 @@ router.post('/addProductOffer', adminAuth, productController.addProductOffer);
 router.post('/removeProductOffer', adminAuth, productController.removeProductOffer);
 
 // Category Offer Routes
-router.post('/addCategoryOffer', adminAuth, categoryController.addCategoryOffer);
-router.post('/removeCategoryOffer', adminAuth, categoryController.removeCategoryOffer);
-
-router.post("/addCategoryOffer",adminAuth,categoryController.addCategoryOffer);
-router.post("/removeCategoryOffer",adminAuth,categoryController.removeCategoryOffer);
+router.post('/admin/addCategoryOffer', adminAuth, categoryController.addCategoryOffer);
+router.post('/admin/removeCategoryOffer', adminAuth, categoryController.removeCategoryOffer);
 
 // Brand management
 router.get("/brands",adminAuth,brandController.getBrandpage);
@@ -93,6 +101,6 @@ router.post("/deleteCoupon", adminAuth, couponController.deleteCoupon);
 // Sales Report Routes
 router.get('/sales-report', adminAuth, salesController.getSalesReport);
 router.post('/generate-report', adminAuth, salesController.generateReport);
-router.get('/download-report/:type', adminAuth, salesController.downloadReport);
+router.get('/download-report/:format', adminAuth, salesController.downloadReport);
 
 module.exports = router;

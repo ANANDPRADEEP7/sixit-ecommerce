@@ -1,0 +1,58 @@
+<%- include("../../views/partials/user/header") %>
+
+<main class="main">
+    <div class="page-header breadcrumb-wrap">
+        <div class="container">
+            <div class="breadcrumb">
+                <a href="/" rel="nofollow">Home</a>
+                <span></span> Payment Failed
+            </div>
+        </div>
+    </div>
+    <section class="mt-50 mb-50">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-6 text-center">
+                    <div class="payment-failed-container">
+                        <div class="mb-4">
+                            <i class="fas fa-times-circle text-danger" style="font-size: 5rem;"></i>
+                        </div>
+                        <h2 class="mb-4">Payment Failed</h2>
+                        <p class="mb-4">We're sorry, but your payment could not be processed. Please try again or choose a different payment method.</p>
+                        <div class="error-details mb-4">
+                            <% if (error) { %>
+                                <div class="alert alert-danger">
+                                    <%= error %>
+                                </div>
+                            <% } %>
+                        </div>
+                        <div class="action-buttons">
+                            <a href="/userProfile" class="btn btn-primary me-3">View Orders</a>
+                            <a href="/shop" class="btn btn-secondary">Continue Shopping</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<%- include("../../views/partials/user/footer") %>
+
+<style>
+    .payment-failed-container {
+        padding: 3rem;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    }
+    .payment-failed-container i {
+        color: #dc3545;
+    }
+    .action-buttons {
+        margin-top: 2rem;
+    }
+    .action-buttons .btn {
+        min-width: 150px;
+    }
+</style>

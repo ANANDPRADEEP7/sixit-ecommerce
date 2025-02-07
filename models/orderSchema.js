@@ -5,9 +5,9 @@ const {v4:uuidv4} = require("uuid");
 
 const orderSchema = new Schema({
     orderId:{
-        type:String,
-        default:()=>uuidv4(),
-        unique:true
+        type: String,
+        required: true,
+        unique: true
     },
     userId:{
         type:Schema.Types.ObjectId,
@@ -35,8 +35,8 @@ const orderSchema = new Schema({
         },
         status:{
             type:String,
-            enum:["pending","Processing","Shipped","Delivered","Cancelled","Returned"],
-            default:"pending",
+            enum:["Pending", "Processing", "Shipped", "Delivered", "Cancelled", "Returned"],
+            default:"Pending",
         },
         reason: {
             type: String,
@@ -52,7 +52,7 @@ const orderSchema = new Schema({
         default:0
     },
     finalAmount:{
-        type:String,
+        type:Number,
         required:true
     },
     createdOn:{
@@ -98,15 +98,17 @@ const orderSchema = new Schema({
         altPhone:{
             type:String,
         },
-    
     },
-    paymentMethod:{
-        type:String,
-        
-     },
-     payment_status:{
-         type:String,
-     },
+    payment_status: {
+        type: String,
+        enum: ['Pending', 'completed', 'Failed'],
+        default: 'Pending'
+    },
+    paymentMethod: {
+        type: String,
+        enum: ['Cash On Delivery', 'razorpay', 'wallet'],
+        required: true
+    },
      razorpayOrderId: String,
      paymentDetails: {
        razorpayOrderId: String,

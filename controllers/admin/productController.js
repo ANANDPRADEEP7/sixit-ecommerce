@@ -27,59 +27,67 @@ const addProducts=async (req,res)=>{
     const products=req.body;
 
     const requiredFields = ['productName', 'description', 'brand', 'regularPrice', 'quantity'];
-        for (const field of requiredFields) {
-            if (!products[field]) {
-                return res.status(400).json({
-                    success: false,
-                    message: `${field} is required`
-                });
-            }
+    for (const field of requiredFields) {
+        if (!products[field]) {
+            return res.status(400).json({
+                success: false,
+                message: `${field} is required`
+            });
         }
-        const productExists = await Product.findOne({
-          productName: { $regex: new RegExp(`^${products.productName}$`, 'i') }
-      });
-
-    
-    if(!productExists){
-      const images=[]
-
-      if(req.files&& req.files.length>0){
-        for(let i=0;i<req.files.length;i++){
-          const originalImagePath=req.files[i].path;
-
-          const resizedImagePath=path.join('public','uploads','re-image',req.files[i].filename);
-         
-          images.push(req.files[i].filename);
-        }
-      }
-      const categoryId=await Category.findOne({name:products.category});
-
-      // if(!categoryId){
-      //   return res.redirect("/admin/addproducts?msg=this category ")
-      // }
-      const newProduct= Product.create({
-        productName:products.productName,
-        description:products.description,
-        brand:products.brand,
-        category:categoryId._id,
-        regularPrice:products.regularPrice,
-        salePrice:products.salePrice,
-        createdOn: new Date(),
-        quantity:products.quantity,
-        size:products.size,
-        color:products.color,
-        productImage:images,
-        status:"Available",
-      });
-
-      
-      return res.redirect("/admin/addProducts");
-    }else{
-      return res.status(400).json({success:false, message:"product already exist"});
     }
+    
+    const productExists = await Product.findOne({
+      productName: { $regex: new RegExp(`^${products.productName}$`, 'i') }
+    });
+
+    if(productExists) {
+      return res.status(400).json({
+        success: false, 
+        message: "Product already exists"
+      });
+    }
+
+    const images = [];
+    if(req.files && req.files.length > 0) {
+      for(let i=0; i < req.files.length; i++) {
+        const originalImagePath = req.files[i].path;
+        const resizedImagePath = path.join('public', 'uploads', 're-image', req.files[i].filename);
+        images.push(req.files[i].filename);
+      }
+    }
+
+    const categoryId = await Category.findOne({name: products.category});
+    if (!categoryId) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid category selected"
+      });
+    }
+
+    await Product.create({
+      productName: products.productName,
+      description: products.description,
+      brand: products.brand,
+      category: categoryId._id,
+      regularPrice: products.regularPrice,
+      salePrice: products.salePrice,
+      createdOn: new Date(),
+      quantity: products.quantity,
+      size: products.size,
+      color: products.color,
+      productImage: images,
+      status: "Available",
+    });
+
+    // Redirect on success
+    return res.redirect("/admin/products");
+
   } catch (error) {
-    console.error("Error saving product",error.message);
-    return res.redirect("/admin/pageerror")
+    console.error("Error saving product:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error saving product. Please try again."
+    });
   }
 }
 
@@ -185,9 +193,9 @@ const getEditProduct=async(req,res)=>{
 const editProduct = async (req, res) => {
   try {
     const id = req.params.id;
-    console.log(id);
+ 
     const product = await Product.findById(id);
-    console.log(product)
+    
     if (!product) {
       return res.status(404).json({ error: "Product not found!" });
     }
@@ -200,14 +208,15 @@ const editProduct = async (req, res) => {
       salePrice: req.body.salePrice || product.salePrice,
       quantity: req.body.quantity || product.quantity,
       color: req.body.color || product.color,
-       category:req.body.category||product.category,
+      brand: req.body.brand || product.brand,
+      category:req.body.category||product.category,
     };
 
   
     if (req.body.category) {
-      console.log(req.body.category);
+  
       const category = await Category.findOne({ name: req.body.category });
-      console.log(category);
+      
       if (!category) {
         return res.status(400).json({ error: "Invalid category!" });
       }
@@ -305,14 +314,6 @@ const addProductOffer = async (req, res) => {
             return res.status(404).json({ success: false, message: "Product not found" });
         }
 
-        // Check if category has an offer
-        if (product.category && product.category.categoryOffer > 0) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "Cannot add product offer when category offer exists" 
-            });
-        }
-
         // Validate percentage
         const offerPercentage = parseInt(percentage);
         if (isNaN(offerPercentage) || offerPercentage < 1 || offerPercentage > 99) {
@@ -322,13 +323,19 @@ const addProductOffer = async (req, res) => {
             });
         }
 
-        // Calculate new sale price with offer
-        const discountAmount = Math.floor(product.regularPrice * (offerPercentage / 100));
-        const newSalePrice = product.regularPrice - discountAmount;
+        // Get category offer if exists
+        const categoryOffer = product.category ? product.category.categoryOffer || 0 : 0;
 
-        // Update product with offer
+        // Set product offer
         product.productOffer = offerPercentage;
-        product.salePrice = newSalePrice;
+
+        // Calculate effective offer (maximum of product and category offers)
+        product.effectiveOffer = Math.max(offerPercentage, categoryOffer);
+
+        // Calculate new sale price with effective offer
+        const discountAmount = Math.floor(product.regularPrice * (product.effectiveOffer / 100));
+        product.salePrice = product.regularPrice - discountAmount;
+
         await product.save();
 
         return res.json({ success: true, message: "Product offer added successfully" });
@@ -345,14 +352,26 @@ const removeProductOffer = async (req, res) => {
             return res.status(400).json({ success: false, message: "Product ID is required" });
         }
 
-        const product = await Product.findById(productId);
+        const product = await Product.findById(productId).populate('category');
         if (!product) {
             return res.status(404).json({ success: false, message: "Product not found" });
         }
 
-        // Reset the sale price to regular price and remove offer
-        product.salePrice = product.regularPrice;
+        // Remove product offer
         product.productOffer = 0;
+
+        // Set effective offer to category offer (if exists)
+        const categoryOffer = product.category ? product.category.categoryOffer || 0 : 0;
+        product.effectiveOffer = categoryOffer;
+
+        // Calculate new sale price based on effective offer
+        if (product.effectiveOffer > 0) {
+            const discountAmount = Math.floor(product.regularPrice * (product.effectiveOffer / 100));
+            product.salePrice = product.regularPrice - discountAmount;
+        } else {
+            product.salePrice = product.regularPrice;
+        }
+
         await product.save();
 
         return res.json({ success: true, message: "Product offer removed successfully" });

@@ -1,4 +1,71 @@
-<%- include("../partials/user/header") %>
+<head>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        .wishlist-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 1;
+            padding: 8px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+        }
+        
+        .wishlist-btn:hover {
+            background-color: rgba(255, 255, 255, 1);
+            transform: scale(1.1);
+        }
+
+        .wishlist-btn i {
+            color: #666;
+            transition: color 0.3s ease;
+        }
+
+        .wishlist-btn i.fas {
+            color: #ff4444;
+        }
+
+        .wishlist-btn:hover i {
+            color: #ff4444;
+        }
+
+        .offer-details {
+            font-size: 0.85rem;
+            text-align: center;
+            padding: 5px 0;
+        }
+
+        .offer-details small {
+            display: block;
+            line-height: 1.4;
+        }
+
+        .offer-details .text-success {
+            color: #28a745;
+            font-weight: 500;
+        }
+
+        .offer-details .text-muted {
+            font-size: 0.8rem;
+        }
+
+        .product-badges .hot {
+            background-color: #ff3d00;
+            font-size: 0.9rem;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-weight: 500;
+        }
+    </style>
+
+</head>
+<%-include("../../Views/partials/user/header")%>
 
 <!-- Shop Section -->
 <div class="shop-container container-fluid py-5">
@@ -82,47 +149,57 @@
             </div>
 
             <!-- Products Grid -->
-            <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4" id="products-container">
+            <div class="row product-grid-4" id="products-container">
                 <% products.forEach(product => { %>
-                    <div class="col product-item">
-                        <div class="product-card glass-card h-100" data-product-name="<%= product.productName.toLowerCase() %>" data-product-description="<%= product.description.toLowerCase() %>" data-product-brand="<%= product.brand.toLowerCase() %>" data-product-price="<%= product.salePrice %>">
-                            <div class="product-image-container">
-                                <img 
-                                    src="<%= product.productImage && product.productImage.length > 0 ? `/uploads/re-image/${product.productImage[0]}` : '/uploads/re-image/default.jpeg' %>" 
-                                    class="card-img-top product-image" 
-                                    alt="<%= product.productName %>"
-                                    loading="lazy"
-                                >
-                                <% if (product.productOffer > 0) { %>
-                                    <div class="offer-badge">
-                                        <span><%= product.productOffer %>% OFF</span>
-                                    </div>
-                                <% } %>
-                                <button class="wishlist-btn" onclick="toggleWishlist(this, '<%= product._id %>')" data-product-id="<%= product._id %>">
-                                    <i class="far fa-heart"></i>
-                                </button>
+                    <div class="col-lg-3 col-md-4 col-12 col-sm-6 product-item">
+                        <div class="product-cart-wrap mb-30" data-product-name="<%= product.productName.toLowerCase() %>" data-product-description="<%= product.description.toLowerCase() %>" data-product-brand="<%= product.brand.toLowerCase() %>" data-product-price="<%= Number(product.salePrice) %>">
+                            <div class="product-img-action-wrap">
+                                <div class="product-img product-img-zoom">
+                                    <a href="/productDetails?id=<%= product._id %>">
+                                        <img class="default-img" 
+                                            src="<%= product.productImage && product.productImage.length > 0 ? `/uploads/re-image/${product.productImage[0]}` : '/uploads/re-image/default.jpeg' %>"
+                                            alt="<%= product.productName %>"
+                                            loading="lazy">
+                                    </a>
+                                </div>
+                                <div class="product-action-1">
+                                    <button class="action-btn hover-up wishlist-btn" onclick="toggleWishlist(this, '<%= product._id %>')" data-product-id="<%= product._id %>">
+                                        <% if (product.isInWishlist) { %>
+                                            <i class="fas fa-heart"></i>
+                                        <% } else { %>
+                                            <i class="far fa-heart"></i>
+                                        <% } %>
+                                    </button>
+                                </div>
                             </div>
-                            <div class="card-body d-flex flex-column p-4">
-                                <h6 class="product-title mb-2">
-                                    <%= product.productName %>
-                                </h6>
-                                <div class="price-container mt-auto">
-                                    <% if (product.productOffer > 0) { %>
-                                        <div class="product-price">
-                                            <span class="current-price">₹<%= product.salePrice %></span>
-                                            <span class="original-price">₹<%= product.regularPrice %></span>
-                                        </div>
-                                    <% } else { %>
-                                        <p class="current-price mb-0">₹<%= product.salePrice %></p>
+                            <div class="product-content-wrap">
+                                <h2><a href="/productDetails?id=<%= product._id %>"><%= product.productName %></a></h2>
+                                <div class="rating-result" title="90%">
+                                    <span>
+                                        <span></span>
+                                    </span>
+                                </div>
+                                <div class="product-price">
+                                    <span>₹<%= product.salePrice %></span>
+                                    <% if (product.regularPrice > product.salePrice) { %>
+                                        <span class="old-price">₹<%= product.regularPrice %></span>
                                     <% } %>
                                 </div>
-                                <div class="product-footer mt-3">
-                                    <% if (product.available_quantity === 0) { %>
-                                        <span class="stock-badge out-of-stock">Out of Stock</span>
+                                <% if (product.effectiveOffer > 0) { %>
+                                    <div class="product-badges product-badges-position product-badges-mrg">
+                                        <span class="hot"><%= product.effectiveOffer %>% OFF</span>
+                                    </div>
+                                <% } %>
+                                <div class="product-action-1 show">
+                                    <% if (product.quantity > 0) { %>
+                                        <a aria-label="Add To Cart" class="action-btn hover-up" href="#" onclick="event.preventDefault(); addToCart('<%= product._id %>')">
+                                            <i class="fi-rs-shopping-bag-add"></i>
+                                        </a>
                                     <% } else { %>
-                                        <span class="stock-badge in-stock">In Stock</span>
+                                        <a aria-label="Out of Stock" class="action-btn hover-up out-of-stock" href="#" onclick="event.preventDefault(); showOutOfStockMessage()">
+                                            <i class="fi-rs-shopping-bag-add"></i>
+                                        </a>
                                     <% } %>
-                                    <a href="/productDetails?id=<%= product._id %>" class="btn btn-outline-dark btn-sm w-100 mt-2">View Details</a>
                                 </div>
                             </div>
                         </div>
@@ -278,34 +355,35 @@
     /* Wishlist Button */
     .wishlist-btn {
         position: absolute;
-        top: 16px;
-        right: 16px;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: white;
+        top: 10px;
+        right: 10px;
+        background: none;
         border: none;
-        box-shadow: 0 4px 12px var(--shadow-color);
-        transition: all var(--transition-speed);
-        z-index: 2;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        font-size: 20px;
+        cursor: pointer;
+        z-index: 1;
+        padding: 8px;
+        border-radius: 50%;
+        background-color: rgba(255, 255, 255, 0.9);
+        transition: all 0.3s ease;
     }
-
+        
     .wishlist-btn:hover {
+        background-color: rgba(255, 255, 255, 1);
         transform: scale(1.1);
     }
 
     .wishlist-btn i {
-        font-size: 18px;
-        color: var(--primary-color);
-        transition: all var(--transition-speed);
+        color: #666;
+        transition: color 0.3s ease;
     }
 
-    .wishlist-btn.active i {
-        color: #e74c3c;
-        animation: heartBeat 0.3s ease-in-out;
+    .wishlist-btn i.fas {
+        color: #ff4444;
+    }
+
+    .wishlist-btn:hover i {
+        color: #ff4444;
     }
 
     /* Stock Badge */
@@ -456,6 +534,7 @@
     }
 </style>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Update price value display
@@ -483,7 +562,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Show/hide products based on search
                 productItems.forEach(item => {
-                    const productCard = item.querySelector('.product-card');
+                    const productCard = item.querySelector('.product-cart-wrap');
                     const productName = productCard.dataset.productName;
                     const productDescription = productCard.dataset.productDescription;
                     const productBrand = productCard.dataset.productBrand;
@@ -512,8 +591,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const items = Array.from(productItems);
             
             items.sort((a, b) => {
-                const cardA = a.querySelector('.product-card');
-                const cardB = b.querySelector('.product-card');
+                const cardA = a.querySelector('.product-cart-wrap');
+                const cardB = b.querySelector('.product-cart-wrap');
                 
                 switch(sortValue) {
                     case 'priceHigh':
@@ -610,6 +689,107 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+function addToCart(productId) {
+    console.log('Adding product to cart:', productId);
+    fetch('/addToCart', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ productId: productId })
+    })
+    .then(response => {
+        console.log('Server response:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.status !== false) {
+            Swal.fire({
+                title: 'Success!',
+                text: 'Product added to cart successfully!',
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false
+            });
+        } else {
+            throw new Error(data.message || 'Failed to add product to cart');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Error!',
+            text: error.message || 'An error occurred while adding to cart',
+            icon: 'error'
+        });
+    });
+}
+
+function showOutOfStockMessage() {
+    Swal.fire({
+        title: 'Out of Stock',
+        text: 'Sorry, this product is currently out of stock',
+        icon: 'info'
+    });
+}
+
+function toggleWishlist(button, productId) {
+    fetch('/add-to-wishlist', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ productId: productId })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Toggle heart icon
+            const heartIcon = button.querySelector('i');
+            if (data.action === 'added') {
+                heartIcon.classList.remove('far');
+                heartIcon.classList.add('fas', 'text-danger');
+            } else {
+                heartIcon.classList.remove('fas', 'text-danger');
+                heartIcon.classList.add('far');
+            }
+            
+            // Show success message
+            Swal.fire({
+                title: 'Success!',
+                text: data.message,
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false
+            });
+        } else {
+            Swal.fire({
+                title: 'Info',
+                text: data.message,
+                icon: 'info',
+                timer: 1500,
+                showConfirmButton: false
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Error!',
+            text: 'Failed to update wishlist. Please try again.',
+            icon: 'error',
+            timer: 1500,
+            showConfirmButton: false
+        });
+    });
+}
 </script>
 
 <%- include('../partials/user/footer.ejs') %>

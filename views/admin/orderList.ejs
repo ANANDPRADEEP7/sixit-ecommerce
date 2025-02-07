@@ -91,7 +91,7 @@
   <div class="container mt-5">
     <h1 class="mb-4 text-center">Order List</h1>
     <table class="table table-bordered table-hover">
-      <thead class="table-dark">
+      <thead class="table-dark text-center">
         <tr>
           <th style="width: 10%;">Order ID</th>
           <th style="width: 15%;">Customer</th>
@@ -106,41 +106,63 @@
         <% if (order && order.length > 0) { %>
           <% order.forEach(order => { %>
             <tr>
-              <td><%= order._id %></td>
-              <td>
+              <!-- Order ID -->
+              <td class="text-center align-middle"><%= order._id %></td>
+  
+              <!-- Customer Details -->
+              <td class="text-center align-middle">
                 <strong><%= order.userId.name %></strong><br>
                 <small><%= order.userId.email %></small>
               </td>
-              <td>
+  
+              <!-- Products -->
+              <td class="align-middle">
                 <% order.orderedItems.forEach(item => { %>
-                  <div class="product-details">
-                    <img src="/uploads/re-image/<%= item.id.productImage[0] %>" alt="Product Image" class="order-image">
-                    <span><%= item.id.productName %></span>
-                    <span class="order-status"><%= item.status %></span>
+                  <div class="product-details d-flex align-items-center mb-2">
+                    <% if (item.id && item.id.productImage && item.id.productImage.length > 0) { %>
+                      <img src="/uploads/re-image/<%= item.id.productImage[0] %>" 
+                           alt="Product Image" class="order-image">
+                    <% } else { %>
+                      <img src="/uploads/default-product.jpg" 
+                           alt="Default Product Image" class="order-image">
+                    <% } %>
+                    <div class="ms-2">
+                      <strong><%= item.id ? item.id.productName : 'Product Not Available' %></strong>
+                    </div>
                   </div>
-              
-              </td>
-              <td>₹<%= order.totalPrice.toFixed(2) %></td>
-              <td><%= order.paymentMethod %></td>
-              <td>
-                <span class="badge 
-                <%= item.status === 'pending' ? 'status-pending' : '' %>
-                <%= item.status === 'Processing' ? 'status-processing' : '' %>
-                <%= item.status === 'Shipped' ? 'status-shipped' : '' %>
-                <%= item.status === 'Delivered' ? 'status-delivered' : '' %>
-                <%= item.status === 'Cancelled' ? 'status-cancelled' : '' %>">
-                <%= item.status %>
-              </span>
                 <% }) %>
               </td>
-              <td>
+  
+              <!-- Total Amount -->
+              <td class="text-center align-middle">₹<%= order.totalPrice.toFixed(2) %></td>
+  
+              <!-- Payment Method -->
+              <td class="text-center align-middle"><%= order.paymentMethod %></td>
+  
+              <!-- Status -->
+              <td class="text-center align-middle">
+                <% order.orderedItems.forEach(item => { %>
+                  <span class="badge 
+                  <%= item.status === 'pending' ? 'status-pending' : '' %>
+                  <%= item.status === 'Processing' ? 'status-processing' : '' %>
+                  <%= item.status === 'Shipped' ? 'status-shipped' : '' %>
+                  <%= item.status === 'Delivered' ? 'status-delivered' : '' %>
+                  <%= item.status === 'Cancelled' ? 'status-cancelled' : '' %>">
+                    <%= item.status %>
+                  </span><br>
+                <% }) %>
+              </td>
+  
+              <!-- Actions -->
+              <td class="text-center align-middle">
                 <a href="/admin/orderView/<%= order._id %>" class="btn btn-info btn-sm mb-1">View</a>
                 <a href="/admin/orderEdit/<%= order._id %>" class="btn btn-primary btn-sm mb-1">Edit</a>
-                <button class="btn btn-danger btn-sm">Delete</button>
+                <!-- <button class="btn btn-danger btn-sm">Delete</button> -->
               </td>
             </tr>
           <% }) %>
         <% } else { %>
+          <!-- No Orders Found -->
           <tr>
             <td colspan="7" class="text-center">No orders found.</td>
           </tr>
@@ -148,6 +170,7 @@
       </tbody>
     </table>
   </div>
+  
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>

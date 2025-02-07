@@ -1,0 +1,134 @@
+<%-include("../../Views/partials/user/header")%>
+
+<div class="about-section py-5">
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="row mb-5 align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold mb-4">Welcome to SIXIT</h1>
+                <p class="lead text-muted">Your premier destination for quality fashion and lifestyle products. We believe in making style accessible to everyone.</p>
+            </div>
+            <div class="col-lg-6">
+                <img src="assets/imgs/theme/sixit-logo.png" alt="About SIXIT" class="img-fluid rounded shadow">
+            </div>
+        </div>
+
+        <!-- Our Mission -->
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="fw-bold mb-4">Our Mission</h2>
+                <p class="lead">To provide our customers with the finest selection of products while ensuring an exceptional shopping experience.</p>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-shipping-fast fa-3x text-primary mb-3"></i>
+                        <h3 class="h5 mb-3">Fast Delivery</h3>
+                        <p class="text-muted">Quick and reliable shipping to your doorstep</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-medal fa-3x text-primary mb-3"></i>
+                        <h3 class="h5 mb-3">Quality Products</h3>
+                        <p class="text-muted">Carefully curated selection of premium items</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <i class="fas fa-headset fa-3x text-primary mb-3"></i>
+                        <h3 class="h5 mb-3">24/7 Support</h3>
+                        <p class="text-muted">Always here to help with your queries</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Section -->
+        <div class="row mb-5">
+            <div class="col-12 text-center mb-4">
+                <h2 class="fw-bold">Our Team</h2>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="team-img-wrapper mb-3">
+                            <img src="/uploads/re-image/7e4bc572-c6d4-46c2-84eb-ab264385f18e.jpeg" alt="Team Member" class="team-img">
+                        </div>
+                        <h4 class="h5">Rohit Sharma</h4>
+                        <p class="text-muted">Founder & CEO</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="team-img-wrapper mb-3">
+                            <img src="\uploads\re-image\Harsha Bhogle on Virat Kohli.jpeg" alt="Team Member" class="team-img">
+                        </div>
+                        <h4 class="h5">Virat Kohli </h4>
+                        <p class="text-muted">Creative Director</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <div class="team-img-wrapper mb-3">
+                            <img src="/uploads/re-image/Sanju Samson in new Indian jersey 📈 Sanju Samson hd wallpaper 📈.jpeg" alt="Team Member" class="team-img">
+                        </div>
+                        <h4 class="h5">Sanju Samson</h4>
+                        <p class="text-muted">Head of Operations</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Section -->
+        <div class="row">
+            <div class="col-12 text-center">
+                <h2 class="fw-bold mb-4">Get In Touch</h2>
+                <p class="lead mb-4">Have questions? We'd love to hear from you.</p>
+                <a href="/contact" class="btn btn-primary btn-lg">Contact Us</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom CSS -->
+<style>
+    .about-section {
+        background-color: #f8f9fa;
+    }
+    .card {
+        transition: transform 0.3s ease;
+    }
+    .card:hover {
+        transform: translateY(-5px);
+    }
+    .text-primary {
+        color: #007bff !important;
+    }
+    .team-img-wrapper {
+        width: 390px;
+        height: 280px;
+        margin: 0 auto;
+        overflow: hidden;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .team-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+</style>
+
+<%- include('../partials/user/footer.ejs') %>

@@ -5,7 +5,7 @@
         <div class="container">
             <div class="breadcrumb">
                 <a href="/" rel="nofollow">Home</a>
-                <span></span> Shop
+                <span></span> <a href="/shop">Shop</a>
                 <span></span> Wishlist
             </div>
         </div>
@@ -30,37 +30,35 @@
                                     <% products.forEach(function(product) { %>
                                         <tr>
                                             <td class="image product-thumbnail">
-                                                <img src="/uploads/products/<%= product.images[0] %>" alt="#" />
+                                                <% if (product && product.productImage && product.productImage.length > 0) { %>
+                                                    <img src="/uploads/re-image/<%= product.productImage[0] %>" alt="<%= product.productName %>" />
+                                                <% } else { %>
+                                                    <img src="/uploads/re-image/default-product.jpg" alt="No image available" />
+                                                <% } %>
                                             </td>
                                             <td class="product-des product-name">
                                                 <h5 class="product-name">
-                                                    <a href="/product/<%= product._id %>"><%= product.name %></a>
+                                                    <a href="/productDetails?id=<%= product._id %>"><%= product.productName || 'Product Name Not Available' %></a>
                                                 </h5>
-                                                <p class="font-xs"><%= product.description %></p>
+                                                <p class="font-xs"><%= product.description || 'No description available' %></p>
                                             </td>
                                             <td class="price" data-title="Price">
-                                                <span>₹<%= product.price %></span>
+                                                <span>₹<%= product.salePrice || product.price || 0 %></span>
                                             </td>
                                             <td class="text-center" data-title="Stock">
                                                 <% if (product.quantity > 0) { %>
-                                                    <span class="color3 font-weight-bold">In Stock</span>
+                                                    <span class="text-success">In Stock</span>
                                                 <% } else { %>
-                                                    <span class="text-danger font-weight-bold">Out of Stock</span>
+                                                    <span class="text-danger">Out of Stock</span>
                                                 <% } %>
                                             </td>
                                             <td class="text-right" data-title="Cart">
-                                                <% if (product.quantity > 0) { %>
-                                                    <button class="btn btn-sm" onclick="addToCart('<%= product._id %>')">
-                                                        <i class="fi-rs-shopping-bag mr-5"></i>Add to cart
-                                                    </button>
-                                                <% } else { %>
-                                                    <button class="btn btn-sm btn-secondary" disabled>
-                                                        <i class="fi-rs-headset mr-5"></i>Out of Stock
-                                                    </button>
-                                                <% } %>
+                                                <button class="btn btn-sm" onclick="addToCart('<%= product._id %>')">
+                                                    Add to Cart
+                                                </button>
                                             </td>
                                             <td class="action" data-title="Remove">
-                                                <a href="#" onclick="confirmRemove('<%= product._id %>'); return false;">
+                                                <a href="javascript:void(0)" onclick="confirmRemove('<%= product._id %>')" class="text-muted">
                                                     <i class="fi-rs-trash"></i>
                                                 </a>
                                             </td>
@@ -69,8 +67,11 @@
                                 <% } else { %>
                                     <tr>
                                         <td colspan="6" class="text-center">
-                                            <p class="lead mb-4">Your wishlist is empty</p>
-                                            <a href="/shop" class="btn btn-primary">Continue Shopping</a>
+                                            <div class="p-4">
+                                                <h4>Your wishlist is empty</h4>
+                                                <p class="mb-4">Add items that you like to your wishlist</p>
+                                                <a href="/shop" class="btn btn-primary">Continue Shopping</a>
+                                            </div>
                                         </td>
                                     </tr>
                                 <% } %>
@@ -87,8 +88,8 @@
 <script>
 function confirmRemove(productId) {
     Swal.fire({
-        title: 'Are you sure?',
-        text: 'Do you want to remove this item from your wishlist?',
+        title: 'Remove from Wishlist',
+        text: 'Are you sure you want to remove this item from your wishlist?',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#3085d6',
@@ -102,34 +103,44 @@ function confirmRemove(productId) {
 }
 
 function addToCart(productId) {
-    $.ajax({
-        url: '/addToCart',
+    fetch('/addToCart', {
         method: 'POST',
-        data: { productId: productId },
-        success: function(response) {
-            if (response.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success',
-                    text: 'Product added to cart!',
-                    showConfirmButton: false,
-                    timer: 1500
-                });
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: response.message || 'Failed to add product to cart'
-                });
-            }
+        headers: {
+            'Content-Type': 'application/json'
         },
-        error: function() {
+        body: JSON.stringify({ productId: productId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status) {
             Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Failed to add product to cart'
+                title: 'Success!',
+                text: 'Product added to cart successfully',
+                icon: 'success',
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                window.location.href = '/getCart';
+            });
+        } else {
+            Swal.fire({
+                title: 'Info',
+                text: data.message || 'Failed to add to cart',
+                icon: 'info',
+                timer: 1500,
+                showConfirmButton: false
             });
         }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            title: 'Error!',
+            text: 'Failed to add to cart. Please try again.',
+            icon: 'error',
+            timer: 1500,
+            showConfirmButton: false
+        });
     });
 }
 </script>

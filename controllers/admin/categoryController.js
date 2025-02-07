@@ -76,13 +76,12 @@ const getEditCategory = async (req, res) => {
 const editCategory = async (req, res) => {
   try {
     let id = req.params.id;
-    console.log(id, "id");
+  
     const { categoryName, description } = req.body;
-    console.log(categoryName, "categoryName");
-    console.log(description, "description");
+  
 
     const existingCategory = await Category.findOne({ name: categoryName });
-    console.log(existingCategory, "existingcategory");
+
 
     if (existingCategory) {
       return res
@@ -131,21 +130,29 @@ const addCategoryOffer = async (req, res) => {
             return res.status(404).json({ success: false, message: "Category not found" });
         }
 
-        // Check if any products in this category have product offers
-        const products = await Product.find({ category: categoryId });
-        const productsWithOffers = products.filter(product => product.productOffer > 0);
-        
-        if (productsWithOffers.length > 0) {
-            return res.status(400).json({ 
-                success: false, 
-                message: "Cannot add category offer when products have individual offers" 
-            });
-        }
-
-        // Add the category offer
+        // Save category offer
         category.categoryOffer = percentage;
         await category.save();
 
+        // Get all products in this category
+        const products = await Product.find({ category: categoryId });
+        
+        // Update each product's effective offer
+        for (const product of products) {
+            const productOffer = product.productOffer || 0;
+            product.effectiveOffer = Math.max(percentage, productOffer);
+
+            // Calculate new sale price based on effective offer
+            if (product.effectiveOffer > 0) {
+                const discount = (product.regularPrice * product.effectiveOffer) / 100;
+                product.salePrice = Math.floor(product.regularPrice - discount);
+            }
+
+            await product.save();
+        }
+
+        // Log for debugging
+      
         return res.json({ success: true, message: "Category offer added successfully" });
     } catch (error) {
         console.error("Error in addCategoryOffer:", error);
@@ -165,9 +172,28 @@ const removeCategoryOffer = async (req, res) => {
             return res.status(404).json({ success: false, message: "Category not found" });
         }
 
-        // Remove the category offer
+        // Remove category offer
         category.categoryOffer = 0;
         await category.save();
+
+        // Update all products in this category
+        const products = await Product.find({ category: categoryId });
+        
+        for (const product of products) {
+            // Set effective offer to product offer (if exists)
+            product.effectiveOffer = product.productOffer || 0;
+
+            // Update sale price based on effective offer
+            if (product.effectiveOffer > 0) {
+                const discount = (product.regularPrice * product.effectiveOffer) / 100;
+                product.salePrice = Math.floor(product.regularPrice - discount);
+            } else {
+                product.salePrice = product.regularPrice;
+            }
+
+            await product.save();
+        }
+
 
         return res.json({ success: true, message: "Category offer removed successfully" });
     } catch (error) {

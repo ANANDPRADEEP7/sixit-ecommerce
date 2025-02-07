@@ -128,11 +128,11 @@ input:focus::-moz-placeholder {
 }
 
 a {
-  color: #088178;
+  color: #000000;
 }
 
 a:hover {
-  color: #046963;
+  color: #410469;
 }
 
 /*--- Common Classes---------------------*/
@@ -5299,6 +5299,7 @@ h6.post-title {
 }
 
 .header-wrap {
+  height: 50px;
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -6445,7 +6446,7 @@ h6.post-title {
 }
 
 .header-style-1 .header-top-ptb-1 {
-  padding: 13px 0;
+  padding: 7px 0;
   border-bottom: 3px solid #39b4ac;
   background-color: #d8f4e2;
   background-image: none;

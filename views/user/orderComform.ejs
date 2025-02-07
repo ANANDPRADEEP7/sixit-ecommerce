@@ -15,12 +15,18 @@
         body {
             background: var(--gradient-color);
             min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
         .order-success-card {
             border: none;
             border-radius: 15px;
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
             background-color: #ffffff;
+            max-width: 600px;
+            width: 100%;
         }
         .order-success-icon {
             font-size: 6rem;
@@ -31,6 +37,7 @@
             border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 10px;
             padding: 20px;
+            margin: 20px 0;
         }
         .btn-primary {
             background-color: var(--primary-color);
@@ -49,46 +56,32 @@
         }
         .btn-outline-primary:hover, .btn-outline-primary:focus {
             background-color: var(--primary-color);
-            color: #ffffff;
+            color: white;
             transform: scale(1.05);
-        }
-        .text-highlight {
-            color: var(--primary-color);
-            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <div class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-md-8 col-lg-6">
-                <div class="card order-success-card">
-                    <div class="card-body text-center p-5">
-                        <i class="fas fa-check-circle order-success-icon mb-4"></i>
-                        <h1 class="card-title mb-4 text-highlight">Order Successful!</h1>
-                        <p class="lead mb-5">Thank you for your purchase. Your order has been processed successfully.</p>
-                        
-                        <div class="order-details">
-                            <h5 class="mb-4 text-highlight">Order Details</h5>
-                            <div class="row mb-3">
-                                <div class="col-6 text-start">
-                                    <i class="fas fa-calendar-alt me-2"></i>Order Date
-                                </div>
-                                <div class="col-6 text-end"><%= date %></div>
-                            </div>
-                            <div class="row">
-                                <div class="col-6 text-start">
-                                    <i class="fas fa-money-bill-wave me-2"></i>Total Amount
-                                </div>
-                                <div class="col-6 text-end fw-bold">₹<%= totalPrice %></div>
-                            </div>
-                        </div>
-                        
-                        <div class="d-grid gap-2 mt-4">
-                            <a href="/userProfile" class="btn btn-primary btn-lg">View Order Details</a>
-                            <a href="/shop" class="btn btn-outline-primary btn-lg">Continue Shopping</a>
-                        </div>
+    <div class="container d-flex align-items-center justify-content-center min-vh-100">
+        <div class="card order-success-card">
+            <div class="card-body text-center p-5">
+                <i class="fas fa-check-circle order-success-icon mb-4"></i>
+                <h2 class="card-title mb-4">Order Placed Successfully!</h2>
+                
+                <div class="order-details">
+                    <h5 class="text-center mb-3">Order Details</h5>
+                    <div class="text-center">
+                        <p class="mb-2"><strong>Order ID:</strong> <%= orderId %></p>
+                        <p class="mb-2"><strong>Order Date:</strong> <%= date %></p>
+                        <p class="mb-2"><strong>Total Amount:</strong> ₹<%= typeof totalPrice === 'number' ? totalPrice.toFixed(2) : parseFloat(totalPrice).toFixed(2) %></p>
                     </div>
+                </div>
+
+                <p class="text-muted mb-4">Thank you for shopping with us! Your order has been confirmed.</p>
+                
+                <div class="d-grid gap-2">
+                    <a href="/order-details/<%= orderId %>" class="btn btn-primary">View Order Details</a>
+                    <a href="/" class="btn btn-outline-primary">Continue Shopping</a>
                 </div>
             </div>
         </div>

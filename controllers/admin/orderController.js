@@ -5,25 +5,45 @@ const Address = require("../../models/addressSchema")
 const orderList=async (req,res)=>{
   try {
     const order = await Order.find()
-      .populate("userId", "name email")
-      .populate("orderedItems.id", "productName productImage")
+      .populate({
+        path: "userId",
+        select: "name email"
+      })
+      .populate({
+        path: "orderedItems.id",
+        select: "productName productImage",
+        // Add match condition to only populate non-deleted products if needed
+        // match: { isDeleted: { $ne: true } }
+      })
       .sort({ 
         createdAt: -1,  // Sort by creation date descending
         _id: -1         // Then by _id descending for consistent ordering
       })
       .exec();
 
-    // Log the order dates to verify sorting
-    console.log("Order dates:", order.map(o => ({
-      id: o._id,
-      date: o.createdAt,
-      status: o.status
-    })));
+    // Clean up any null products from the data
+    order.forEach(o => {
+      if (o.orderedItems) {
+        o.orderedItems = o.orderedItems.map(item => {
+          if (!item.id) {
+            return {
+              ...item,
+              id: {
+                productName: 'Product Not Available',
+                productImage: []
+              }
+            };
+          }
+          return item;
+        });
+      }
+    });
 
-    res.render("orderList",{order})
+    
+    res.render("orderList", { order });
   } catch (error) {
-    console.error("error in load order page",error);   
-    res.redirect("/pageNotFound")
+    console.error("error in load order page", error);   
+    res.redirect("/pageNotFound");
   }
 }
 

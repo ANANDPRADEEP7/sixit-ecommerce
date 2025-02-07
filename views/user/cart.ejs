@@ -7,9 +7,9 @@
         <div class="page-header breadcrumb-wrap">
             <div class="container">
                 <div class="breadcrumb">
-                    <a href="index.html" rel="nofollow">Home</a>
-                    <span></span> Shop
-                    <span></span> Your Cart
+                    <a href="/" rel="nofollow">Home</a>
+                    <span></span> <a href="/shop">Shop</a>
+                    <span></span> Cart
                 </div>
             </div>
         </div>
@@ -55,24 +55,22 @@
                                                        
                                                     </span></td>
                                                 <td class="text-center" data-title="Stock">
-                                                    <div class="detail-qty border radius  m-auto">
-                                                        <a href="#" class="qty-down"
-                                                            onclick="updateCartQuantity('<%= item.productId._id %>', <%= item.quantity - 1 %>)">
+                                                    <div class="detail-qty border radius m-auto">
+                                                        <a href="#" class="qty-down" data-product-id="<%= item.productId._id %>" data-current-qty="<%= item.quantity %>">
                                                             <i class="fi-rs-angle-small-down"></i>
                                                         </a>
-                                                        <span class="qty-val">
+                                                        <span class="qty-val" id="qty-<%= item.productId._id %>">
                                                             <%= item.quantity %>
                                                         </span>
-                                                        <a href="#" class="qty-up"
-                                                            onclick="updateCartQuantity('<%= item.productId._id %>', <%= item.quantity + 1 %>)">
+                                                        <a href="#" class="qty-up" data-product-id="<%= item.productId._id %>" data-current-qty="<%= item.quantity %>">
                                                             <i class="fi-rs-angle-small-up"></i>
                                                         </a>
                                                     </div>
 
                                                 </td>
                                                 <td class="text-right" data-title="Cart">
-                                                    <span>
-                                                        ₹<%= Math.floor(item.totalPrice)  %>
+                                                    <span class="item-total" id="total-<%= item.productId._id %>" data-price="<%= item.productId.salePrice %>">
+                                                        ₹<%= Math.floor(item.totalPrice) %>
                                                     </span>
                                                 </td>
                                                 <td class="action" data-title="Remove">
@@ -109,29 +107,15 @@
                                     <div class="table-responsive">
                                         <table class="table">
                                             <tbody>
-                                                <!-- <tr>
-                                                    <td class="cart_total_label">Cart Subtotal</td>
-                                                    <td class="cart_total_amount"><span class="font-lg fw-900 text-brand">₹</span></td>
-                                                </tr> -->
-                                                <!-- <tr>
-                                                    <td class="cart_total_label">Shipping</td>
-                                                    <td class="cart_total_amount"> <i class="ti-gift mr-5"></i> Free Shipping</td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="cart_total_label">Total</td>
-                                                    <td class="cart_total_amount"><strong><span class="font-xl fw-900 text-brand">₹</span></strong></td>
-                                                </tr> -->
+                                                
                                             </tbody>
                                         </table>
                                     </div>
                                     <a href="/checkout" class="btn "> <i class="fi-rs-box-alt mr-10"></i> Proceed To CheckOut</a>
                                 </div>
                             </div>
-                            <!-- <div class="col-lg-6 col-md-12">
-                                <div class="border p-md-4 p-30 border-radius cart-totals">                                  
-                                    <a href="/checkOut" class="btn "> <i class="fi-rs-box-alt mr-10"></i> Proceed To
-                                        CheckOut</a>
-                                </div> -->
+                            <div class="col-lg-6 col-md-12">
+                                
                             </div>
                         </div>
                     </div>
@@ -144,6 +128,102 @@
     <%-include("../../views/partials/user/footer")%>
 
         <script>
+            $(document).ready(function() {
+                // Handle quantity increase/decrease
+                $('.qty-up, .qty-down').click(function(e) {
+                    e.preventDefault();
+                    const btn = $(this);
+                    const productId = btn.data('product-id');
+                    let currentQty = parseInt(btn.data('current-qty'));
+                    const isIncrease = btn.hasClass('qty-up');
+                    const newQty = isIncrease ? currentQty + 1 : currentQty - 1;
+
+                    if (newQty < 1) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Cannot reduce quantity',
+                            text: 'Quantity cannot be less than 1. Use remove button to delete item.',
+                            confirmButtonText: 'OK'
+                        });
+                        return;
+                    }
+
+                    if (newQty > 5) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Maximum Quantity Reached',
+                            text: 'Maximum quantity for this product is 5.',
+                            confirmButtonText: 'OK'
+                        });
+                        return;
+                    }
+
+                    updateCartQuantity(productId, newQty, btn);
+                });
+
+                async function updateCartQuantity(productId, newQuantity, btnElement) {
+                    try {
+                        const response = await fetch('/updateCartQuantity', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                productId: productId,
+                                quantity: newQuantity
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.status) {
+                            // Update quantity display
+                            $(`#qty-${productId}`).text(newQuantity);
+                            
+                            // Update item total
+                            const pricePerUnit = parseFloat($(`#total-${productId}`).data('price'));
+                            const newTotal = Math.floor(pricePerUnit * newQuantity);
+                            $(`#total-${productId}`).text(`₹${newTotal}`);
+
+                            // Update button data attributes
+                            $('.qty-up, .qty-down').filter(`[data-product-id="${productId}"]`).data('current-qty', newQuantity);
+
+                            // Show success message
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Cart Updated',
+                                text: 'Cart quantity updated successfully!',
+                                timer: 1000,
+                                showConfirmButton: false
+                            });
+                        } else {
+                            // Show error message from server
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Update Failed',
+                                text: data.message || 'Failed to update cart quantity',
+                                confirmButtonText: 'OK'
+                            });
+                            
+                            // Reset the quantity display to previous value
+                            const currentQty = parseInt(btnElement.data('current-qty'));
+                            $(`#qty-${productId}`).text(currentQty);
+                        }
+                    } catch (error) {
+                        console.error("Error in updating cart quantity", error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'Failed to update the cart. Please try again.',
+                            confirmButtonText: 'OK'
+                        });
+                        
+                        // Reset the quantity display to previous value
+                        const currentQty = parseInt(btnElement.data('current-qty'));
+                        $(`#qty-${productId}`).text(currentQty);
+                    }
+                }
+            });
 
             function RemoveFromCart(productId) {
 
@@ -162,64 +242,4 @@
                     }
                 })
             }
-
-
-            async function updateCartQuantity(productId, quantity) {
-
-                if (quantity > 5) {
-                    Swal.fire({
-                        icon: "warning",
-                        title: "Maximum Quantity Reached",
-                        text: "Maximum quantity for this product is 5.",
-                        confirmButtonText: "OK",
-                    }).then(()=>{
-                        location.reload();
-                    })
-                    return; 
-                }
-
-                if (quantity <= 0) {
-                    Swal.fire({
-                        icon: "warning",
-                        title: "Minimum Quantity Alert",
-                        text: "Minimum quantity is 1.",
-                        confirmButtonText: "OK",
-                    });
-                    return; 
-                }
-
-                try {
-                    const response = await fetch("/updateCartQuantity", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ productId, quantity }),
-                    });
-
-                    const data = await response.json();
-
-                    if (data.status) {
-                        location.reload();
-                    } else {
-                        Swal.fire({
-                            icon: "error",
-                            title: "Error",
-                            text: data.message,
-                            confirmButtonText: "OK",
-                        })
-                        .then(()=>location.reload())
-                    }
-                } catch (error) {
-                    console.error("Error in updating cart quantity", error);
-                    Swal.fire({
-                        icon: "error",
-                        title: "Error",
-                        text: "Failed to update the cart. Please try again.",
-                        confirmButtonText: "OK",
-                    });
-                }
-            }
-
-
-    
-    
         </script>

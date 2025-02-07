@@ -188,8 +188,7 @@
                                                        </div>
                            </div>
                            <div>
-                               <button class="btn btn-md rounded font-sm hover-up"  type="submit" onclick="validateAndSubmit(event)
-">Publish</button>
+                               <button class="btn btn-md rounded font-sm hover-up"  type="submit">Publish</button>
                            </div>
                        </form>
                    </div>
@@ -200,52 +199,47 @@
 <script src="https://cdn.jsdelivr.net/npm/cropperjs/dist/cropper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
-   async function validateAndSubmit(event) {
-    event.preventDefault();
+document.getElementById('addProductForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
     
-    if (!validateForm()) {
-        return false;
-    }
-
-    const form = document.getElementById('addProductForm');
-    const formData = new FormData(form);
-
+    // Create FormData object
+    const formData = new FormData(this);
+    
     try {
         const response = await fetch('/admin/addProducts', {
             method: 'POST',
             body: formData
         });
-
-        const result = await response.json();
-
-        if (response.ok) {
+        
+        if (response.redirected) {
+            // If the response is a redirect, show success message and redirect
             Swal.fire({
+                icon: 'success',
                 title: 'Success!',
                 text: 'Product added successfully',
-                icon: 'success',
-                confirmButtonText: 'OK'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = '/admin/products';
-                }
+                showConfirmButton: false,
+                timer: 1500
+            }).then(() => {
+                window.location.href = response.url;
             });
         } else {
+            // If it's a JSON response (error case)
+            const data = await response.json();
             Swal.fire({
-                title: 'Error!',
-                text: result.message || 'Failed to add product',
                 icon: 'error',
-                confirmButtonText: 'OK'
+                title: 'Oops...',
+                text: data.message || 'Something went wrong!'
             });
         }
     } catch (error) {
+        console.error('Error:', error);
         Swal.fire({
-            title: 'Error!',
-            text: 'Something went wrong',
             icon: 'error',
-            confirmButtonText: 'OK'
+            title: 'Oops...',
+            text: 'Something went wrong while adding the product!'
         });
     }
-}
+});
 
     function viewImage1(event){
         document.getElementById("imgView1").src=URL.createObjectURL(event.target.files[0])
@@ -338,7 +332,7 @@ saveButton.addEventListener("click", async function () {
                 thumbnail.remove();
             });
 
-            thumbnail.appendChild(Img);
+            thumbnail.appendChild(img);
             thumbnail.appendChild(removeIcon);
             addedImagesContainer.appendChild(thumbnail);
         }
@@ -438,7 +432,3 @@ saveButton.addEventListener("click", async function () {
 </script>
      
 <%- include("../../views/partials/admin/footer") %>
-
-
-
-

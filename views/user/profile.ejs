@@ -1,139 +1,253 @@
 <%- include("../../views/partials/user/header") %>
 <style>
- .card-green {
-   background-color: #ADD8E6;
- }
- .main {
-   padding: 30px 0;
- }
-
-
- .dashboard-menu {
-   background-color: #cce3e6;
-   border-radius: 10px;
-   padding: 15px;
-   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
- }
-
-
- .dashboard-menu .nav-link {
- font-weight: bold;
- color: #30683c;
- box-shadow: 0 4px 10px rgba(123, 131, 112, 0.3), 0 4px 20px rgba(0, 191, 255, 0.2);
- transition: box-shadow 0.3s ease;
+:root {
+  --primary-color: #3498db;
+  --secondary-color: #2ecc71;
+  --background-color: #f8f9fa;
+  --text-color: #2c3e50;
+  --border-radius: 15px;
+  --box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  --transition: all 0.3s ease;
 }
 
-
-.dashboard-menu .nav-link:hover {
- color: #00bfff;
- box-shadow: 0 4px 15px rgba(173, 255, 47, 0.5), 0 6px 25px rgba(0, 191, 255, 0.4);
+.main {
+  padding: 30px 0;
+  background-color: var(--background-color);
 }
 
-
- .card {
-   border-radius: 10px;
-   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-   margin-bottom: 20px;
- }
-
-
- .card-header {
-   background-color: #487379;
-   color: white;
-   border-radius: 10px 10px 0 0;
- }
-
-
- .btn-success {
-   background-color: #577194;
-   border-color: #6bb87d;
- }
-
-
- .btn-success:hover {
-   background-color: #506955;
- }
-
-
- .form-group {
-   margin-bottom: 15px;
- }
-
-
- .required {
-   color: red;
- }
-
-
-  @media (max-width: 768px) {
-   .dashboard-menu {
-     padding: 10px;
-   }
-
-
-   .card {
-     margin-bottom: 15px;
-   }
- }
- .page-header.breadcrumb-wrap {
- background-color: #eee2e9;
- padding: 15px 0;
+/* Dashboard Menu Styling */
+.dashboard-menu {
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  box-shadow: var(--box-shadow);
 }
 
+.dashboard-menu .nav-link {
+  font-weight: 500;
+  color: var(--text-color);
+  padding: 12px 20px;
+  margin: 8px 0;
+  border-radius: var(--border-radius);
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  background: white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.dashboard-menu .nav-link i {
+  margin-right: 10px;
+  font-size: 1.2em;
+  color: var(--primary-color);
+}
+
+.dashboard-menu .nav-link:hover,
+.dashboard-menu .nav-link.active {
+  background: var(--primary-color);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.dashboard-menu .nav-link:hover i,
+.dashboard-menu .nav-link.active i {
+  color: white;
+}
+
+/* Card Styling */
+.card {
+  border: none;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  overflow: hidden;
+  transition: var(--transition);
+  background: white;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  padding: 20px;
+  border: none;
+}
+
+.card-body {
+  padding: 25px;
+}
+
+/* Form Elements */
+.form-control {
+  border-radius: 10px;
+  padding: 12px;
+  border: 1px solid #e1e1e1;
+  transition: var(--transition);
+}
+
+.form-control:focus {
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+  border-color: var(--primary-color);
+}
+
+/* Buttons */
+.btn {
+  padding: 12px 25px;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: var(--transition);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-success {
+  background: linear-gradient(135deg, var(--secondary-color), #27ae60);
+  border: none;
+  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #27ae60, var(--secondary-color));
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(46, 204, 113, 0.4);
+}
+
+/* Breadcrumb */
+.breadcrumb-wrap {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  padding: 15px 0;
+  margin-bottom: 30px;
+  border-radius: var(--border-radius);
+}
 
 .breadcrumb {
- display: flex;
- align-items: center;
- font-family: 'Arial', sans-serif;
- font-size: 16px;
- color: #121311;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
 }
-
 
 .breadcrumb a {
- color: #007bff;
- text-decoration: none;
- position: relative;
- margin: 0 5px;
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: var(--transition);
 }
-
 
 .breadcrumb a:hover {
- color: #0056b3;
+  color: var(--secondary-color);
 }
-
 
 .breadcrumb span {
- margin: 0 5px;
- color: #999;
+  margin: 0 10px;
+  color: #6c757d;
 }
 
-
-.breadcrumb a::after {
- content: '';
- position: absolute;
- width: 100%;
- height: 2px;
- background: #6e6e3a;
- left: 0;
- bottom: -2px;
- transform: scaleX(0);
- transition: transform 0.3s ease;
+/* Profile Info */
+.profile-info {
+  text-align: center;
+  padding: 20px;
 }
 
+.profile-info img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin-bottom: 15px;
+  border: 4px solid white;
+  box-shadow: var(--box-shadow);
+}
 
-.breadcrumb a:hover::after {
- transform: scaleX(1);
+.profile-info h5 {
+  color: var(--text-color);
+  margin-bottom: 10px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dashboard-menu {
+    margin-bottom: 20px;
+  }
+  
+  .card {
+    margin-bottom: 20px;
+  }
+  
+  .breadcrumb-wrap {
+    padding: 10px 0;
+  }
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-content {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Table Styling */
+.table {
+  border-radius: var(--border-radius);
+  overflow: hidden;
+}
+
+.table th {
+  background-color: #f8f9fa;
+  border: none;
+  padding: 15px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.table td {
+  padding: 15px;
+  vertical-align: middle;
+  border-color: #f0f0f0;
+}
+
+/* Status Badges */
+.badge {
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-success {
+  background-color: var(--secondary-color);
+  color: white;
+}
+
+.badge-warning {
+  background-color: #f1c40f;
+  color: white;
+}
+
+.badge-danger {
+  background-color: #e74c3c;
+  color: white;
 }
 </style>
-
-
 <main class="main">
  <div class="page-header breadcrumb-wrap mb-3">
    <div class="container">
      <div class="breadcrumb">
-       <a href="#" rel="nofollow">Home</a>
-       <span></span> Profile <span></span> Account
+       <a href="/" rel="nofollow">Home</a>
+       <span></span> <a href="/userProfile">Profile</a>
+       <span></span> Account Settings
      </div>
    </div>
  </div>
@@ -170,11 +284,11 @@
                      <i class="fi-rs-shopping-cart-check mr-10"></i>Wallet History
                    </a>
                  </li>
-                 <li class="nav-item">
+                 <!-- <li class="nav-item">
                    <a class="nav-link" id="track-orders-tab" data-bs-toggle="tab" href="#referal" role="tab" aria-controls="track-orders" aria-selected="false">
                      <i class="fi-rs-shopping-cart-check mr-10"></i>Referals
                    </a>
-                 </li>
+                 </li> -->
                  <!-- <li class="nav-item">
                    <a class="nav-link" href="/logout">
                      <i class="fi-rs-sign-out mr-10"></i>Logout
@@ -214,10 +328,10 @@
                  aria-labelledby="address-tab"
                >
                  <div class="row">
-                  <%if(userAddress){%>
-                    <%userAddress.address.forEach((address)=>{%>
-                   <div class="col-lg-6">
-                     <div class="card mb-3 mb-lg-0">
+                  <% if (userAddress && userAddress.address && userAddress.address.length > 0) { %>
+                     <% userAddress.address.forEach((address) => { %>
+                    <div class="col-lg-6">
+                      <div class="card mb-3 mb-lg-0">
                        <div class="card-header">
                          <h5 class="mb-0"><%=address.addressType%></h5>
                        </div>
@@ -243,7 +357,8 @@
                        </div>
                      </div>
                    </div>
-                   <%})%> <%}else{%>
+                   <% }) %>
+                   <% } else { %>
                    <div class="col-lg-6">
                      <div class="card mb-3 mb-lg-0">
                        <div class="card-header">
@@ -254,7 +369,7 @@
                        </div>
                      </div>
                    </div>
-                   <%}%>
+                   <% } %>
                    <div>
                      <a href="/addAddress">
                        <button class="btn btn-primary w-70">
@@ -275,7 +390,7 @@
                   </div>
                   <div class="card-body">
                     <div class="table-responsive">
-                      <table class="table">
+                      <table class="table" id="orders-table">
                         <thead>
                           <tr>
                             <th>Order</th>
@@ -285,20 +400,20 @@
                             <th>Actions</th>
                           </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="orders-tbody">
                           <% orderData.forEach(order => { %>
                             <% order.orderedItems.forEach(item => { %>
                                 <tr>
                                     <td><%= item.name %></td>
                                     <td><%= item.status %></td>
                                     <td><%= item.quantity  %></td>
-                                    <td>₹<%= item.price %></td>
+                                    <td>₹<%= parseFloat(order.finalAmount).toLocaleString() %></td>
                                     <td> 
                                       <a href="/order-details/<%= order._id %>" class="btn btn-info btn-sm">View Details</a>
                                       <% if (item.status === 'pending') { %>
                                         <form action="javascript:void(0)" style="display:inline;">
                                           <button type="button" class="btn btn-danger btn-sm" 
-                                                  onclick="cancelProduct('<%= order._id %>', '<%= item.name %>')">
+                                                  onclick="cancelProduct('<%= order._id %>', '<%= item.id._id %>')">
                                             Cancel
                                           </button>
                                         </form>
@@ -318,10 +433,110 @@
                         <% }) %>
                          </tbody>
                       </table>
+                      <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+                        <div class="mt-4">
+                          <nav aria-label="Orders pagination">
+                            <ul class="pagination justify-content-center">
+                              <% if (currentPage > 1) { %>
+                                <li class="page-item">
+                                  <a class="page-link" href="#" onclick="loadOrders(<%= currentPage - 1 %>); return false;">&laquo;</a>
+                                </li>
+                              <% } %>
+                              <% for(let i = 1; i <= totalPages; i++) { %>
+                                <li class="page-item <%= currentPage === i ? 'active' : '' %>">
+                                  <a class="page-link" href="#" onclick="loadOrders(<%= i %>); return false;"><%= i %></a>
+                                </li>
+                              <% } %>
+                              <% if (currentPage < totalPages) { %>
+                                <li class="page-item">
+                                  <a class="page-link" href="#" onclick="loadOrders(<%= currentPage + 1 %>); return false;">&raquo;</a>
+                                </li>
+                              <% } %>
+                            </ul>
+                          </nav>
+                        </div>
+                      <% } %>
                     </div>
                   </div>
                 </div>
               </div>
+
+              <script>
+              function loadOrders(page) {
+                fetch('/api/orders?page=' + page)
+                  .then(response => response.json())
+                  .then(data => {
+                    const tbody = document.querySelector('#orders-tbody');
+                    tbody.innerHTML = '';
+                    
+                    data.orders.forEach(order => {
+                      order.orderedItems.forEach(item => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                          <td>${item.name}</td>
+                          <td>${item.status}</td>
+                          <td>${item.quantity}</td>
+                          <td>₹${item.price}</td>
+                          <td>
+                            <a href="/order-details/${order._id}" class="btn btn-info btn-sm">View Details</a>
+                            ${item.status === 'pending' ? `
+                              <form action="javascript:void(0)" style="display:inline;">
+                                <button type="button" class="btn btn-danger btn-sm" 
+                                        onclick="cancelProduct('${order._id}', '${item.id._id}')">
+                                  Cancel
+                                </button>
+                              </form>
+                            ` : item.status === 'Cancelled' ? `
+                              <span class="text-danger">Cancelled</span>
+                            ` : item.status === 'Shipped' ? `
+                              <span class="text-warning">Shipped</span>
+                            ` : item.status === 'Delivered' ? `
+                              <span class="text-success">Delivered</span>
+                            ` : item.status === 'Return' ? `
+                              <span class="text-warning">Return</span>
+                            ` : ''}
+                          </td>
+                        `;
+                        tbody.appendChild(tr);
+                      });
+                    });
+
+                    // Update pagination UI
+                    const paginationNav = document.querySelector('#orders nav');
+                    if (paginationNav) {
+                      const ul = paginationNav.querySelector('ul');
+                      ul.innerHTML = '';
+                      
+                      if (data.currentPage > 1) {
+                        ul.innerHTML += `
+                          <li class="page-item">
+                            <a class="page-link" href="#" onclick="loadOrders(${data.currentPage - 1}); return false;">&laquo;</a>
+                          </li>
+                        `;
+                      }
+                      
+                      for (let i = 1; i <= data.totalPages; i++) {
+                        ul.innerHTML += `
+                          <li class="page-item ${data.currentPage === i ? 'active' : ''}">
+                            <a class="page-link" href="#" onclick="loadOrders(${i}); return false;">${i}</a>
+                          </li>
+                        `;
+                      }
+                      
+                      if (data.currentPage < data.totalPages) {
+                        ul.innerHTML += `
+                          <li class="page-item">
+                            <a class="page-link" href="#" onclick="loadOrders(${data.currentPage + 1}); return false;">&raquo;</a>
+                          </li>
+                        `;
+                      }
+                    }
+                  })
+                  .catch(error => {
+                    console.error('Error loading orders:', error);
+                  });
+              }
+              </script>
                <div class="tab-pane fade" id="track-orders" role="tabpanel" aria-labelledby="track-orders-tab">
                  <div class="card">
                    <div class="card-header">
@@ -330,19 +545,22 @@
                    <div class="card-body contact-from-area">
                      <div class="row">
                        <div class="col-lg-8 mx-auto text-center mt-90">
-                         <form>
+                         <form id="addMoneyForm">
                            <div class="form-group">
-                             <label for="walletAmount" class="h4">Amount</label>
-                             <div class="h3"></div>
+                             <label for="walletAmount" class="h4">Current Balance</label>
+                             <div class="h3">₹<%= wallet.balance.toFixed(2) %></div>
                            </div>
-                           <button type="button" class="btn btn-success" onclick="">Add Money</button>
+                           <div class="form-group">
+                             <!-- <label for="amount">Add Money</label> -->
+                             <input type="number" id="amount" name="amount" class="form-control" min="1" step="1" required>
+                           </div>
+                           <!-- <button type="submit" class="btn btn-success">Add Money</button> -->
                          </form>
                        </div>
                      </div>
                    </div>
                  </div>
                </div>
-
 
                <div class="tab-pane fade" id="wallet-history" role="tabpanel" aria-labelledby="orders-tab">
                  <div class="card">
@@ -355,16 +573,40 @@
                          <thead>
                            <tr>
                              <th>Date</th>
-                             <th>Status</th>
+                             <th>Type</th>
+                             <th>Description</th>
                              <th>Amount</th>
+                             <th>Balance</th>
                            </tr>
                          </thead>
                          <tbody>
-                           <tr>
-                             <td></td>
-                             <td></td>
-                             <td></td>
-                           </tr>
+                           <% if (walletHistory && walletHistory.length > 0) { %>
+                             <% walletHistory.forEach(transaction => { %>
+                               <tr>
+                                 <td><%= new Date(transaction.date).toLocaleDateString() %></td>
+                                 <td>
+                                   <% if (transaction.type === 'credit') { %>
+                                     <span class="text-success">Credit</span>
+                                   <% } else { %>
+                                     <span class="text-danger">Debit</span>
+                                   <% } %>
+                                 </td>
+                                 <td><%= transaction.description %></td>
+                                 <td>
+                                   <% if (transaction.type === 'credit') { %>
+                                     <span class="text-success">+₹<%= transaction.amount.toFixed(2) %></span>
+                                   <% } else { %>
+                                     <span class="text-danger">-₹<%= transaction.amount.toFixed(2) %></span>
+                                   <% } %>
+                                 </td>
+                                 <td>₹<%= transaction.balance.toFixed(2) %></td>
+                               </tr>
+                             <% }); %>
+                           <% } else { %>
+                             <tr>
+                               <td colspan="5" class="text-center">No transactions yet</td>
+                             </tr>
+                           <% } %>
                          </tbody>
                        </table>
                      </div>
@@ -372,8 +614,7 @@
                  </div>
                </div>
 
-
-               <div class="tab-pane fade" id="referal" role="tabpanel" aria-labelledby="track-orders-tab">
+               <!-- <div class="tab-pane fade" id="referal" role="tabpanel" aria-labelledby="track-orders-tab">
                  <div class="card">
                    <div class="card-header">
                      <h5 class="mb-0">Referal</h5>
@@ -384,7 +625,7 @@
                      <p>Earned: ₹</p>
                    </div>
                  </div>
-               </div>
+               </div> -->
        </div>
      </div>
    </div>
@@ -394,7 +635,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
- function cancelProduct(orderId, productName) {
+ function cancelProduct(orderId, productId) {
   Swal.fire({
     title: 'Are you sure?',
     text: 'Do you want to cancel this product?',
@@ -406,33 +647,127 @@
     cancelButtonText: 'No, keep it',
   }).then((result) => {
     if (result.isConfirmed) {
-      fetch(`/orders/${orderId}/product/${encodeURIComponent(productName)}/cancel`, {
+      fetch(`/orders/${orderId}/product/${productId}/cancel`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
       })
-        .then(response => response.json())
-        .then(data => {
-          if (data.error) {
-            throw new Error(data.error);
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
           }
-          Swal.fire(
-            'Canceled!',
-            'The product has been canceled.',
-            'success'
-          ).then(() => {
-            location.reload();
-          });
+          return response.json();
+        })
+        .then(data => {
+          if (data.success) {
+            Swal.fire(
+              'Canceled!',
+              'The product has been canceled.',
+              'success'
+            ).then(() => {
+              location.reload();
+            });
+          } else {
+            throw new Error(data.message || 'Failed to cancel the order');
+          }
         })
         .catch(error => {
           console.error('Error canceling product:', error);
-          Swal.fire('Error!', error.message || 'Something went wrong. Please try again.', 'error');
+          Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: 'Something went wrong. Please try again.',
+            confirmButtonText: 'OK'
+          });
         });
     }
   });
 }
 
+// Wallet functionality
+document.getElementById('addMoneyForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const amount = document.getElementById('amount').value;
 
+    try {
+        // Create order
+        const response = await fetch('/add-money-to-wallet', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ amount })
+        });
 
+        const result = await response.json();
+
+        if (result.success) {
+            const options = {
+                key: '<%= process.env.RAZORPAY_KEY_ID %>',
+                amount: amount * 100,
+                currency: "INR",
+                name: "SIXIT",
+                description: "Add money to wallet",
+                order_id: result.order.id,
+                handler: async function (response) {
+                    try {
+                        const verifyResponse = await fetch('/verify-wallet-payment', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_signature: response.razorpay_signature,
+                                amount: amount
+                            })
+                        });
+
+                        const verifyResult = await verifyResponse.json();
+
+                        if (verifyResult.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Success!',
+                                text: 'Money added to wallet successfully'
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            throw new Error(verifyResult.message);
+                        }
+                    } catch (error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: error.message || 'Failed to verify payment'
+                        });
+                    }
+                },
+                prefill: {
+                    name: "<%= user.name %>",
+                    email: "<%= user.email %>",
+                    contact: "<%= user.phone %>"
+                },
+                theme: {
+                    color: "#3399cc"
+                }
+            };
+
+            const rzp1 = new Razorpay(options);
+            rzp1.open();
+
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message || 'Failed to process payment'
+        });
+    }
+});
 </script>

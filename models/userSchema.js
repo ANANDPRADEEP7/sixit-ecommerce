@@ -39,6 +39,10 @@ const userSchema=new Schema({
     type:Schema.Types.ObjectId,
     ref:"Cart"
   }],
+  wishlist:[{
+    type: Schema.Types.ObjectId,
+    ref: "Product"
+  }],
   wallet:[{
     type:Schema.Types.ObjectId,
     ref:"wishlist"

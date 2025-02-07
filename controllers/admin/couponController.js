@@ -39,7 +39,6 @@ const editCoupon = async (req, res) => {
       return res.status(400).send("Coupon ID is required");
     }
 
-    console.log("Finding coupon with ID:", id);
     const findCoupon = await Coupon.findById(id);
     
     if (!findCoupon) {
@@ -47,7 +46,6 @@ const editCoupon = async (req, res) => {
       return res.status(404).send("Coupon not found");
     }
 
-    console.log("Found coupon:", findCoupon);
     res.render("admin/edit-coupon", { findCoupon });
   } catch (error) {
     console.error("Error loading edit coupon page:", error);
@@ -58,7 +56,6 @@ const editCoupon = async (req, res) => {
 const updateCoupon = async (req, res) => {
   try {
     const { couponId, couponName, startDate, endDate, offerPrice, minimumPrice } = req.body;
-    console.log("Update request body:", req.body);
 
     if (!couponId) {
       return res.status(400).json({
@@ -87,7 +84,6 @@ const updateCoupon = async (req, res) => {
       });
     }
 
-    console.log("Coupon updated successfully:", updatedCoupon);
     res.json({
       success: true,
       message: "Coupon updated successfully"
@@ -104,7 +100,7 @@ const updateCoupon = async (req, res) => {
 const deleteCoupon = async (req, res) => {
   try {
     const { couponId } = req.body;
-    console.log("Delete request body:", req.body);
+    
     
     if (!couponId) {
       console.error("No coupon ID provided for deletion");
@@ -124,7 +120,6 @@ const deleteCoupon = async (req, res) => {
       });
     }
 
-    console.log("Coupon deleted successfully:", deletedCoupon);
     res.status(200).json({
       success: true,
       message: "Coupon deleted successfully"
