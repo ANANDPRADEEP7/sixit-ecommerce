@@ -106,10 +106,10 @@
                     <div class="mb-4">
                         <p class="text-muted mb-3 small text-uppercase">Price Range</p>
                         <div class="range-slider">
-                            <input type="range" name="price" class="form-range custom-range" min="0" max="100000" step="1000" id="priceRange" value="<%= typeof selectedPrice !== 'undefined' ? selectedPrice : 100000 %>">
+                            <input type="range" name="price" class="form-range custom-range" min="0" max="3000" step="500" id="priceRange" value="<%= typeof selectedPrice !== 'undefined' ? selectedPrice : 100000 %>">
                             <div class="d-flex justify-content-between mt-2">
                                 <span class="price-label text-muted small">₹0</span>
-                                <span class="price-label text-muted small" id="priceValue">₹<%= typeof selectedPrice !== 'undefined' ? selectedPrice : 100000 %></span>
+                                <span class="price-label text-muted small" id="priceValue">₹<%= typeof selectedPrice !== 'undefined' ? selectedPrice : 3000 %></span>
                             </div>
                         </div>
                     </div>

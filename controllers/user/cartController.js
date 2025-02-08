@@ -194,84 +194,107 @@ const updateCartQuantity = async(req,res)=>{
 
 const cancelOrder = async (req, res) => {
   try {
-    const { orderId, productId } = req.params;
-    const userId = req.session.user;
+      const { orderId, productId } = req.params;
+      const userId = req.session.user;
 
-    if (!mongoose.Types.ObjectId.isValid(orderId) || !mongoose.Types.ObjectId.isValid(productId)) {
-      return res.status(400).json({ success: false, message: "Invalid orderId or productId." });
-    }
-
-    const order = await Order.findOne({ _id: orderId, userId });
-    if (!order) {
-      return res.status(404).json({ success: false, message: "Order not found or does not belong to the user." });
-    }
-
-    const orderItem = order.orderedItems.find(
-      item => item.id.toString() === productId
-    );
-
-    if (!orderItem) {
-      return res.status(404).json({ success: false, message: "Product not found in order." });
-    }
-
-    if (orderItem.status === "Shipped" || orderItem.status === "Delivered") {
-      return res.status(400).json({ success: false, message: "Cannot cancel order. Product has already been shipped or delivered." });
-    }
-
-    if (orderItem.status === "Cancelled") {
-      return res.status(400).json({ success: false, message: "Product is already cancelled." });
-    }
-
-    // Calculate refund amount
-    const refundAmount = orderItem.price * orderItem.quantity;
-
-    // Update product status to Cancelled
-    orderItem.status = "Cancelled";
-    
-    // Restore product quantity
-    await Product.findByIdAndUpdate(
-      productId,
-      { $inc: { quantity: orderItem.quantity } }
-    );
-
-    // Save order first to ensure status is updated
-    await order.save();
-
-    // Credit the amount to wallet
-    try {
-      const walletResponse = await walletController.useWalletBalance(
-        userId, 
-        refundAmount, 
-        `Amount credited for cancelled product from order #${orderId}`, 
-        'credit'
-      );
-      
-      if (!walletResponse.success) {
-        console.error("Wallet credit failed:", walletResponse.message);
-        return res.status(500).json({ 
-          success: false, 
-          message: "Failed to credit amount to wallet. Please contact support." 
-        });
+      if (!mongoose.Types.ObjectId.isValid(orderId) || !mongoose.Types.ObjectId.isValid(productId)) {
+          return res.status(400).json({ success: false, message: "Invalid orderId or productId." });
       }
-    } catch (walletError) {
-      console.error("Error crediting to wallet:", walletError);
-      return res.status(500).json({ 
-        success: false, 
-        message: "Failed to credit amount to wallet. Please contact support." 
-      });
-    }
 
-    return res.status(200).json({ 
-      success: true, 
-      message: "Product cancelled successfully and amount credited to wallet"
-    });
+      const order = await Order.findOne({ _id: orderId, userId });
+      if (!order) {
+          return res.status(404).json({ success: false, message: "Order not found or does not belong to the user." });
+      }
+
+      const orderItem = order.orderedItems.find(
+          item => item.id.toString() === productId
+      );
+
+      if (!orderItem) {
+          return res.status(404).json({ success: false, message: "Product not found in order." });
+      }
+
+      if (orderItem.status === "Shipped" || orderItem.status === "Delivered") {
+          return res.status(400).json({ success: false, message: "Cannot cancel order. Product has already been shipped or delivered." });
+      }
+
+      if (orderItem.status === "Cancelled") {
+          return res.status(400).json({ success: false, message: "Product is already cancelled." });
+      }
+
+      // Calculate refund amount considering coupon discount
+      let refundAmount;
+      
+      if (order.coupon) {
+          // Calculate this item's proportion of the total order
+          const itemSubtotal = parseFloat(orderItem.price) * orderItem.quantity;
+          const orderSubtotal = order.totalPrice;
+          const itemProportion = itemSubtotal / orderSubtotal;
+          
+          // Calculate coupon discount for this item
+          const totalDiscount = order.totalPrice - order.finalAmount;
+          const itemDiscount = totalDiscount * itemProportion;
+          
+          // Final refund amount is item price minus its share of discount
+          refundAmount = itemSubtotal - itemDiscount;
+      } else {
+          // If no coupon, refund the full item price
+          refundAmount = parseFloat(orderItem.price) * orderItem.quantity;
+      }
+
+      // Update product status to Cancelled
+      orderItem.status = "Cancelled";
+      
+      // Restore product quantity
+      await Product.findByIdAndUpdate(
+          productId,
+          { $inc: { quantity: orderItem.quantity } }
+      );
+
+      // Save order first to ensure status is updated
+      await order.save();
+
+      // Only process refund for Razorpay or if payment status is completed
+      if (order.paymentMethod === 'razorpay' || order.payment_status === 'completed') {
+          try {
+              const walletResponse = await walletController.useWalletBalance(
+                  userId, 
+                  refundAmount, 
+                  `Refund for cancelled product from order #${order.orderId}${order.coupon ? ' (includes coupon discount)' : ''}`, 
+                  'credit'
+              );
+              
+              if (!walletResponse.success) {
+                  console.error("Wallet credit failed:", walletResponse.message);
+                  return res.status(500).json({ 
+                      success: false, 
+                      message: "Failed to credit amount to wallet. Please contact support." 
+                  });
+              }
+          } catch (walletError) {
+              console.error("Error crediting to wallet:", walletError);
+              return res.status(500).json({ 
+                  success: false, 
+                  message: "Failed to credit amount to wallet. Please contact support." 
+              });
+          }
+      }
+
+      const message = order.paymentMethod === 'Cash On Delivery' && order.payment_status !== 'completed'
+          ? "Order cancelled successfully"
+          : `Order cancelled and ₹${refundAmount.toFixed(2)} credited to wallet`;
+
+      return res.status(200).json({ 
+          success: true, 
+          message
+      });
 
   } catch (error) {
-    console.error("Error canceling order:", error);
-    return res.status(500).json({ 
-      success: false, 
-      message: "Failed to cancel the order. Please try again later." 
-    });
+      console.error("Error canceling order:", error);
+      return res.status(500).json({ 
+          success: false, 
+          message: "Failed to cancel the order. Please try again later." 
+      });
   }
 };
 
@@ -323,13 +346,17 @@ const cancelEntireOrder = async (req, res) => {
 
 const returnProduct = async (req, res) => {
     try {
-        const { orderId, productId, reason } = req.body;
+        const { orderId, productId } = req.params;
+        const { reason } = req.body;
         const userId = req.session.user;
 
+        if (!mongoose.Types.ObjectId.isValid(orderId) || !mongoose.Types.ObjectId.isValid(productId)) {
+            return res.status(400).json({ success: false, message: "Invalid orderId or productId." });
+        }
+
         const order = await Order.findOne({ _id: orderId, userId });
-        
         if (!order) {
-            return res.status(404).json({ success: false, message: "Order not found" });
+            return res.status(404).json({ success: false, message: "Order not found or does not belong to the user." });
         }
 
         const orderItem = order.orderedItems.find(
@@ -337,31 +364,46 @@ const returnProduct = async (req, res) => {
         );
 
         if (!orderItem) {
-            return res.status(404).json({ success: false, message: "Product not found in order" });
+            return res.status(404).json({ success: false, message: "Product not found in order." });
         }
 
         if (orderItem.status !== "Delivered") {
             return res.status(400).json({ 
                 success: false, 
-                message: "Only delivered products can be returned" 
+                message: "Only delivered products can be returned." 
             });
         }
 
-        // Calculate refund amount based on the final amount
-        const refundAmount = parseFloat(order.finalAmount);
+        // Calculate refund amount
+        let refundAmount = parseFloat(orderItem.price) * orderItem.quantity;
 
-        // Add refund to wallet
-        await walletController.useWalletBalance(
+        // If there's a discount, calculate the proportional discount for this item
+        if (order.discount > 0) {
+            const itemTotal = parseFloat(orderItem.price) * orderItem.quantity;
+            const orderTotal = order.totalPrice;
+            const discountRatio = order.discount / orderTotal;
+            const itemDiscount = itemTotal * discountRatio;
+            refundAmount = itemTotal - itemDiscount;
+        }
+
+        // Process refund to wallet
+        const walletResponse = await walletController.useWalletBalance(
             userId, 
             refundAmount, 
-            `Refund for returned product from order #${orderId}`, 
+            `Refund for returned product from order #${order.orderId}`, 
             'credit'
         );
+
+        if (!walletResponse.success) {
+            return res.status(500).json({ 
+                success: false, 
+                message: "Failed to process refund. Please contact support." 
+            });
+        }
 
         // Update the order status to Returned and add reason
         orderItem.status = "Returned";
         orderItem.reason = reason;
-        orderItem.refundAmount = refundAmount; // Store the actual refunded amount
         await order.save();
 
         // Update product quantity
@@ -372,14 +414,14 @@ const returnProduct = async (req, res) => {
 
         return res.status(200).json({ 
             success: true, 
-            message: `Product returned and refund of ₹${refundAmount.toFixed(2)} initiated successfully` 
+            message: `Return processed and ₹${refundAmount.toFixed(2)} credited to wallet.` 
         });
 
     } catch (error) {
         console.error("Error in returning product:", error);
         return res.status(500).json({ 
             success: false, 
-            message: "Internal server error" 
+            message: "Failed to process return. Please try again later." 
         });
     }
 };

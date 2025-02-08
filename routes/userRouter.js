@@ -84,7 +84,7 @@ router.get("/removeFromCart",userAuth,removeProduct);
 router.post("/updateCartQuantity",userAuth,updateCartQuantity);
 router.post('/orders/:orderId/product/:productId/cancel', userAuth, cancelOrder);
 router.post('/orders/:orderId/cancel', userAuth, cancelEntireOrder);
-router.post("/return-product", userAuth, returnProduct);
+router.post('/orders/:orderId/product/:productId/return', userAuth, returnProduct);
 
 // Wallet Management
 router.post('/add-money-to-wallet', userAuth, walletController.addMoneyToWallet);

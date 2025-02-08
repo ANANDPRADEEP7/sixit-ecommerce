@@ -8,6 +8,7 @@ const Coupon = require("../../models/couponSchema");
 const mongoose = require('mongoose');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
+const walletController = require('./walletController'); // Assuming walletController is in the same directory
 
 // Initialize Razorpay
 let razorpay;
@@ -360,6 +361,57 @@ const postCheckout = async (req, res) => {
                 await Order.findByIdAndDelete(savedOrder._id);
                 throw new Error("Failed to create Razorpay order: " + error.message);
             }
+        } else if (paymentMethod === "wallet") {
+            try {
+                // Get user's wallet
+                const wallet = await walletController.getWalletDetails(req, res);
+                
+                // Check if wallet has sufficient balance
+                if (wallet.balance < total) {
+                    await Order.findByIdAndDelete(savedOrder._id);
+                    return res.status(400).json({
+                        success: false,
+                        message: "Insufficient wallet balance"
+                    });
+                }
+
+                // Debit amount from wallet
+                const walletResponse = await walletController.useWalletBalance(
+                    userId,
+                    total,
+                    `Payment for order #${savedOrder.orderId}`,
+                    'debit'
+                );
+
+                if (!walletResponse.success) {
+                    await Order.findByIdAndDelete(savedOrder._id);
+                    return res.status(400).json({
+                        success: false,
+                        message: walletResponse.message || "Failed to process wallet payment"
+                    });
+                }
+
+                // Update order status
+                savedOrder.payment_status = 'completed';
+                savedOrder.orderedItems.forEach(item => {
+                    item.status = 'Processing';
+                });
+                await savedOrder.save();
+
+                // Clear cart after successful payment
+                await Cart.findOneAndDelete({ userId });
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Order placed successfully using wallet balance",
+                    orderId: savedOrder._id,
+                    order: savedOrder
+                });
+            } catch (error) {
+                console.error("Wallet payment error:", error);
+                await Order.findByIdAndDelete(savedOrder._id);
+                throw new Error("Failed to process wallet payment: " + error.message);
+            }
         }
 
         // For non-Razorpay payments (COD), clear cart and return success
@@ -392,26 +444,35 @@ const orderComform = async (req, res) => {
         const orderId = req.query.id;
         const msg = req.query.msg;
         
+        if (!orderId) {
+            return res.redirect("/pageNotFound");
+        }
+
         let order;
         if (msg === "repayment") {
             order = await Order.findOne({ orderId: orderId });
         } else {
+            // Validate if orderId is a valid ObjectId
+            if (!mongoose.Types.ObjectId.isValid(orderId)) {
+                return res.redirect("/pageNotFound");
+            }
             order = await Order.findById(orderId);
         }
 
         if (!order) {
-            throw new Error("Order not found");
+            return res.redirect("/pageNotFound");
         }
 
-        return res.render("user/orderComform", { 
-            totalPrice: Number(order.finalAmount), 
-            date: order.createdOn.toLocaleDateString(),
-            orderId: order.orderId || order._id
-        });
+        const userData = await User.findById(req.session.user);
 
+        res.render("orderComform", {
+            user: req.session.user,
+            userData,
+            order
+        });
     } catch (error) {
-        console.error("Error in confirm page:", error);
-        return res.redirect("/pageNotFound");
+        console.error("Error in order confirmation:", error);
+        res.redirect("/pageNotFound");
     }
 };
 
@@ -562,9 +623,12 @@ const retryPayment = async (req, res) => {
             key_id: 'rzp_test_5KZZZMvpPLEQ2p', // Using the hardcoded test key
             order_id: razorpayOrder.id,
             amount: razorpayOrder.amount,
-            name: user.name || '',
-            email: user.email || '',
-            phone: user.phone || ''
+            order: order,
+            user: {
+                name: user.name || '',
+                email: user.email || '',
+                mobile: user.mobile || ''
+            }
         };
         console.log('Sending response:', response);
         res.json(response);

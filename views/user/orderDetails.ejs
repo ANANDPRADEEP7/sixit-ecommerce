@@ -120,6 +120,26 @@
                         </div>
                     </div>
 
+                    <!-- Order Summary -->
+                    <div class="bg-gray-50 p-6 rounded-lg mt-8">
+                        <h2 class="text-xl font-semibold mb-4">Order Summary</h2>
+                        <% if (order.discount && order.discount > 0) { %>
+                            <div class="bg-yellow-50 p-4 rounded-lg mb-4">
+                                <div class="flex items-center">
+                                    <i class="fas fa-tag text-yellow-600 text-xl mr-3"></i>
+                                    <div>
+                                        <p class="text-sm text-gray-600">Coupon Discount</p>
+                                        <p class="font-semibold">₹<%= order.discount %></p>
+                                    </div>
+                                </div>
+                            </div>
+                        <% } %>
+                        <div class="flex justify-between items-center">
+                            <p class="text-gray-600">Total Amount</p>
+                            <p class="font-semibold text-xl">₹<%= order.finalAmount %></p>
+                        </div>
+                    </div>
+
                     <!-- Shipping Address -->
                     <div class="mb-8">
                         <h2 class="text-xl font-semibold mb-4">Shipping Address</h2>
@@ -167,21 +187,203 @@
     <!-- Include your existing JavaScript for payment handling -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script>
-        // Your existing JavaScript functions for handling returns, cancellations, and payments
         function returnProduct(orderId, productId) {
-            // Your existing return product logic
+            Swal.fire({
+                title: 'Return Product',
+                text: 'Please provide a reason for returning the product',
+                input: 'text',
+                inputPlaceholder: 'Enter reason for return',
+                showCancelButton: true,
+                confirmButtonText: 'Submit Return',
+                cancelButtonText: 'Cancel',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'You need to provide a reason for return!';
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const reason = result.value;
+                    fetch(`/orders/${orderId}/product/${productId}/return`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ reason })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Return Initiated',
+                                text: 'Your return request has been submitted successfully.',
+                                confirmButtonText: 'OK'
+                            }).then(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            throw new Error(data.message || 'Failed to process return');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: error.message || 'Failed to process your return request. Please try again.'
+                        });
+                    });
+                }
+            });
         }
 
         function cancelProduct(orderId, productId) {
-            // Your existing cancel product logic
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'Do you want to cancel this product?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, cancel it!',
+                cancelButtonText: 'No, keep it',
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`/orders/${orderId}/product/${productId}/cancel`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        Swal.fire(
+                            'Cancelled!',
+                            'Your product has been cancelled.',
+                            'success'
+                        ).then(() => {
+                            window.location.reload();
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire(
+                            'Error!',
+                            'There was an error cancelling your product.',
+                            'error'
+                        );
+                    });
+                }
+            });
         }
 
         function retryPayment(orderId, amount) {
-            // Your existing retry payment logic
+            fetch('/retry-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ orderId, amount })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'Failed to create payment order');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                const options = {
+                    key: data.key_id,
+                    amount: data.amount,
+                    currency: "INR",
+                    name: "Sixit",
+                    description: "Payment retry for order",
+                    order_id: data.order_id,
+                    handler: function (response) {
+                        verifyRetryPayment(response, data.order);
+                    },
+                    prefill: {
+                        name: data.user?.name || "",
+                        email: data.user?.email || "",
+                        contact: data.user?.mobile || ""
+                    },
+                    theme: {
+                        color: "#3399cc"
+                    }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.open();
+                
+                rzp.on('payment.failed', function (response) {
+                    console.error('Payment failed:', response.error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Payment Failed',
+                        text: response.error.description || 'Payment could not be processed'
+                    });
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'Something went wrong'
+                });
+            });
         }
 
-        function verifyRetryPayment(payment, orderId) {
-            // Your existing verify payment logic
+        function verifyRetryPayment(payment, order) {
+            fetch('/verify-retry-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ payment, order })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'Payment verification failed');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Payment Successful',
+                        text: 'Your payment has been processed successfully'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    throw new Error(data.error || 'Payment verification failed');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Payment Verification Failed',
+                    text: error.message || 'Could not verify payment'
+                });
+            });
         }
     </script>
     

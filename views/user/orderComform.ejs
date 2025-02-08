@@ -71,16 +71,23 @@
                 <div class="order-details">
                     <h5 class="text-center mb-3">Order Details</h5>
                     <div class="text-center">
-                        <p class="mb-2"><strong>Order ID:</strong> <%= orderId %></p>
-                        <p class="mb-2"><strong>Order Date:</strong> <%= date %></p>
-                        <p class="mb-2"><strong>Total Amount:</strong> ₹<%= typeof totalPrice === 'number' ? totalPrice.toFixed(2) : parseFloat(totalPrice).toFixed(2) %></p>
+                        <p class="mb-2"><strong>Order ID:</strong> <%=  order.orderId %></p>
+                        <p class="mb-2"><strong>Order Date:</strong> <%= new Date(order.createdOn).toLocaleDateString('en-US', { 
+                            year: 'numeric', 
+                            month: 'long', 
+                            day: 'numeric' 
+                        }) %></p>
+                        <p class="mb-2"><strong>Total Amount:</strong> 
+                            ₹<%= order.finalAmount %>
+                        </p>
+                        
                     </div>
                 </div>
 
                 <p class="text-muted mb-4">Thank you for shopping with us! Your order has been confirmed.</p>
                 
                 <div class="d-grid gap-2">
-                    <a href="/order-details/<%= orderId %>" class="btn btn-primary">View Order Details</a>
+                    <a href="/order-details/<%=order.orderId %>" class="btn btn-primary">View Order Details</a>
                     <a href="/" class="btn btn-outline-primary">Continue Shopping</a>
                 </div>
             </div>
