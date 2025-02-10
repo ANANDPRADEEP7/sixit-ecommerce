@@ -538,7 +538,7 @@ const verifyPayment = async (req, res) => {
             const order = await Order.findById(orderId);
             if (order) {
                 await Cart.findOneAndUpdate(
-                    { userId: order.userId },
+                    { userId: order.userId},
                     { $set: { items: [] } }
                 );
             }
@@ -684,12 +684,26 @@ const verifyRetryPayment = async (req, res) => {
             { new: true }
         );
 
+        const cart = await Cart.findOne({ userId: userId });
+
+        if (cart) {
+            // Update the cart using the correct cart document
+            await Cart.findOneAndUpdate(
+                { userId: userId },
+                { $set: { items: [] } }
+            );
+        }
+
+      res.json({ success: true });
+
+        
+
         if (!updatedOrder) {
             console.error('Failed to update order after payment verification');
             return res.status(500).json({ error: 'Failed to update order status' });
         }
 
-        res.json({ success: true });
+       
 
     } catch (error) {
         console.error('Verify retry payment error:', error);
