@@ -106,6 +106,7 @@ router.get('/payment-failed', userAuth, (req, res) => {
 router.get("/checkOut",userAuth,checkoutController.checkOutPage);
 router.post("/check-out-addaddress",userAuth,checkoutController.checkOutAddress);
 router.post("/apply-coupon", userAuth, checkoutController.applyCoupon);
+router.post("/remove-coupon", userAuth, checkoutController.removeCoupon);
 router.get("/orderComform",userAuth,checkoutController.orderComform);
 router.post("/checkout",userAuth,checkoutController.postCheckout);
 

@@ -284,7 +284,12 @@
                                         </tr>
                                         <tr>
                                             <th>Discount</th>
-                                            <td colspan="2" data-discount="0"><em>₹0</em></td>
+                                            <td colspan="2" class="d-flex justify-content-center align-items-center" data-discount="0">
+                                                <em class="discount-amount">₹0</em>
+                                                <button id="removeCouponBtn" class="btn btn-sm btn-danger ms-2" style="display: none;">
+                                                    <i class="fi-rs-trash"></i>
+                                                </button>
+                                            </td>
                                         </tr>
                                         <tr>
                                             <th>Total</th>
@@ -543,67 +548,105 @@
                         body: JSON.stringify({ couponCode })
                     });
 
-                    console.log('Response status:', response.status);
                     const data = await response.json();
-                    console.log('Response data:', data);
+                    console.log('Response:', data);
 
                     if (data.success) {
-                        const discount = data.discount;
-                        const newTotal = originalTotal - discount;
-                        
-                        // Update all price displays
-                        const totalPriceElement = document.getElementById('totalPrice');
-                        const discountElement = document.querySelector('td[data-discount]');
+                        appliedCoupon = couponCode;
+                        const discountElement = document.querySelector('[data-discount]');
+                        const discountAmount = document.querySelector('.discount-amount');
                         const subtotalElement = document.getElementById('subtotal');
+                        const removeCouponBtn = document.getElementById('removeCouponBtn');
                         
-                        // Update subtotal (remains unchanged as it's before discount)
-                        if (totalPriceElement) {
-                            totalPriceElement.textContent = `₹${Math.floor(originalTotal)}`;
-                        }
+                        // Update discount amount
+                        discountElement.setAttribute('data-discount', data.discount);
+                        discountAmount.textContent = `₹${Math.floor(data.discount)}`;
                         
-                        // Update discount
-                        if (discountElement) {
-                            discountElement.innerHTML = `<em>₹${Math.floor(discount)}</em>`;
-                            discountElement.setAttribute('data-discount', discount);
-                        }
+                        // Update total amount
+                        const newTotal = originalTotal - data.discount;
+                        subtotalElement.querySelector('span').textContent = `₹${Math.floor(newTotal)}`;
                         
-                        // Update final total
-                        if (subtotalElement) {
-                            const subtotalSpan = subtotalElement.querySelector('span');
-                            if (subtotalSpan) {
-                                subtotalSpan.textContent = `₹${Math.floor(newTotal)}`;
-                            }
-                        }
+                        // Show remove coupon button
+                        removeCouponBtn.style.display = 'inline-block';
                         
                         Swal.fire({
                             icon: 'success',
-                            title: 'Success!',
-                            text: `Coupon applied successfully! Discount: ₹${Math.floor(discount)}`
+                            title: 'Coupon Applied',
+                            text: `Discount of ₹${Math.floor(data.discount)} applied successfully!`,
+                            confirmButtonText: 'OK'
                         });
-
-                        appliedCoupon = {
-                            code: couponCode,
-                            discount: discount
-                        };
-
-                        // Update the original total for future calculations
-                        originalTotal = newTotal;
                     } else {
                         Swal.fire({
                             icon: 'error',
-                            title: 'Oops...',
-                            text: data.message || 'Error applying coupon'
+                            title: 'Error',
+                            text: data.message || 'Failed to apply coupon',
+                            confirmButtonText: 'OK'
                         });
                     }
                 } catch (error) {
-                    console.error('Error applying coupon:', error);
+                    console.error('Error:', error);
                     Swal.fire({
                         icon: 'error',
                         title: 'Error',
-                        text: 'An error occurred while applying the coupon'
+                        text: 'Failed to apply coupon. Please try again.',
+                        confirmButtonText: 'OK'
                     });
                 }
             }
+
+            // Remove coupon functionality
+            document.getElementById('removeCouponBtn').addEventListener('click', async function() {
+                try {
+                    const response = await fetch('/remove-coupon', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        appliedCoupon = null;
+                        const discountElement = document.querySelector('[data-discount]');
+                        const discountAmount = document.querySelector('.discount-amount');
+                        const subtotalElement = document.getElementById('subtotal');
+                        const removeCouponBtn = document.getElementById('removeCouponBtn');
+                        
+                        // Reset discount
+                        discountElement.setAttribute('data-discount', '0');
+                        discountAmount.textContent = '₹0';
+                        
+                        // Reset total to original
+                        subtotalElement.querySelector('span').textContent = `₹${Math.floor(originalTotal)}`;
+                        
+                        // Hide remove coupon button
+                        removeCouponBtn.style.display = 'none';
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Coupon Removed',
+                            text: 'Coupon has been removed successfully!',
+                            confirmButtonText: 'OK'
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: data.message || 'Failed to remove coupon',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Failed to remove coupon. Please try again.',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            });
 
             // Place order functionality
             let paymentMethod = "Cash On Delivery"; // Default payment method

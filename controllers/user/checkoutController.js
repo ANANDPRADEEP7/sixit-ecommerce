@@ -711,14 +711,43 @@ const verifyRetryPayment = async (req, res) => {
     }
 };
 
+const removeCoupon = async (req, res) => {
+    try {
+        const userId = req.session.user;
+        
+        // Find the user's cart
+        const cart = await Cart.findOne({ userId });
+        if (!cart) {
+            return res.status(404).json({ success: false, message: "Cart not found" });
+        }
+
+        // Remove coupon from cart
+        cart.coupon = null;
+        cart.couponDiscount = 0;
+        await cart.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Coupon removed successfully"
+        });
+    } catch (error) {
+        console.error("Error removing coupon:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to remove coupon"
+        });
+    }
+};
+
 module.exports = {
     checkOutPage,
     checkOutAddress,
     createRazorpayOrder,
     verifyPayment,
-    orderComform,
     postCheckout,
+    orderComform,
     applyCoupon,
+    removeCoupon,
     retryPayment,
     verifyRetryPayment
 };
