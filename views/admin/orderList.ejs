@@ -111,8 +111,13 @@
   
               <!-- Customer Details -->
               <td class="text-center align-middle">
-                <strong><%= order.userId.name %></strong><br>
-                <small><%= order.userId.email %></small>
+                <% if (order.userId) { %>
+                  <strong><%= order.userId.name %></strong><br>
+                  <small><%= order.userId.email %></small>
+                <% } else { %>
+                  <strong>Deleted User</strong><br>
+                  <small>User not available</small>
+                <% } %>
               </td>
   
               <!-- Products -->

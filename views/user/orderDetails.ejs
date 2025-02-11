@@ -108,7 +108,7 @@
                                                     class="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
                                                 Return
                                             </button>
-                                        <% } else if (item.status.toLowerCase() !== 'cancelled') { %>
+                                        <% } else if (item.status.toLowerCase() !== 'cancelled' && order.payment_status.toLowerCase() !== 'pending') { %>
                                             <button onclick="cancelProduct('<%= order._id %>', '<%= item.id._id %>')"
                                                     class="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600">
                                                 Cancel
