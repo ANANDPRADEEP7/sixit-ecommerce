@@ -304,7 +304,7 @@ const loadShoppingPage=async(req,res)=>{
     }) : [];
 
     const page = parseInt(req.query.page) || 1;
-    const limit = 12;
+    const limit = 8;
     const skip = (page - 1) * limit;
 
     let products = await Product.find({
@@ -469,7 +469,7 @@ const filterProduct=async (req,res)=>{
 const filterByPrice=async(req,res)=>{
   try {
     const user = req.session.user;
-    const maxPrice = parseInt(req.query.price) || 100000;
+    const maxPrice = parseInt(req.query.price) || 10000;
     const sort = req.query.sort;
     const userData = await User.findById(user);
     const brands = await Brand.find({}).lean();
@@ -520,7 +520,7 @@ const filterByPrice=async(req,res)=>{
       findProducts.sort((a, b) => new Date(b.createdOn) - new Date(a.createdOn));
     }
 
-    const itemsPerPage = 6;
+    const itemsPerPage = 8;
     const currentPage = parseInt(req.query.page) || 1;
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;

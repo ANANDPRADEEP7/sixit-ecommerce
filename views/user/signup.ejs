@@ -307,15 +307,14 @@ function togglePassword(fieldId, toggleButton) {
   function passwordValidationChecking() {
     const passwordval = passwordid.value.trim();
     const confirmval = confirmpasswordid.value.trim();
-    const passwordpattern = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
-
+    const passwordpattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,16}$/;
 
     if (passwordval === "") {
       error4.style.display = "block";
       error4.innerHTML = "Please enter a password";
     } else if (!passwordpattern.test(passwordval)) {
       error4.style.display = "block";
-      error4.innerHTML = "Password must be at least 8 characters, with at least 1 letter and 1 number";
+      error4.innerHTML = "Password must be 8-16 characters long and include at least one letter, one number, and one special character (!@#$%^&*)";
     } else {
       error4.style.display = "none";
       error4.innerHTML = "";

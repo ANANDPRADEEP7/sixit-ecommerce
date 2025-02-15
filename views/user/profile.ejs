@@ -199,22 +199,83 @@
 
 /* Table Styling */
 .table {
+  margin-bottom: 0;
+  background: white;
   border-radius: var(--border-radius);
-  overflow: hidden;
 }
 
 .table th {
-  background-color: #f8f9fa;
-  border: none;
-  padding: 15px;
+  border-bottom: 2px solid #dee2e6;
+  padding: 12px;
   font-weight: 600;
   color: var(--text-color);
 }
 
 .table td {
-  padding: 15px;
+  padding: 12px;
   vertical-align: middle;
-  border-color: #f0f0f0;
+}
+
+/* Order Items Styling */
+.order-items-container {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+.order-items-container .table {
+  background: transparent;
+}
+
+.order-items-container th {
+  font-size: 0.9em;
+  color: #6c757d;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.order-items-container td {
+  font-size: 0.9em;
+}
+
+/* Status Badge Styling */
+.badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 500;
+  font-size: 0.85em;
+  margin-right: 5px;
+  text-transform: capitalize;
+}
+
+.badge.pending {
+  background-color: #ffc107;
+  color: #000;
+}
+
+.badge.processing {
+  background-color: #17a2b8;
+  color: #fff;
+}
+
+.badge.shipped {
+  background-color: #007bff;
+  color: #fff;
+}
+
+.badge.delivered {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.badge.cancelled {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+.badge.returned {
+  background-color: #6c757d;
+  color: #fff;
 }
 
 /* Status Badges */
@@ -239,6 +300,27 @@
 .badge-danger {
   background-color: #e74c3c;
   color: white;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #6c757d;
+}
+
+.form-group {
+    position: relative;
+}
+
+.invalid-feedback {
+    display: none;
+}
+
+.form-control.is-invalid + .invalid-feedback {
+    display: block;
 }
 </style>
 <main class="main">
@@ -284,6 +366,11 @@
                      <i class="fi-rs-shopping-cart-check mr-10"></i>Wallet History
                    </a>
                  </li>
+                 <li class="nav-item">
+                   <a class="nav-link" id="change-password-tab" data-bs-toggle="tab" href="#change-password" role="tab" aria-controls="change-password" aria-selected="false">
+                     <i class="fi-rs-key mr-10"></i>Change Password
+                   </a>
+                 </li>
                  <!-- <li class="nav-item">
                    <a class="nav-link" id="track-orders-tab" data-bs-toggle="tab" href="#referal" role="tab" aria-controls="track-orders" aria-selected="false">
                      <i class="fi-rs-shopping-cart-check mr-10"></i>Referals
@@ -315,7 +402,7 @@
                        <strong>Email:</strong><%=user?.email%>
                      </p>
                     
-                     <a href="/change-password" class="btn btn-sm btn-success">Change Password</a>
+                     <!-- <a href="/change-password" class="btn btn-sm btn-success">Change Password</a> -->
                    </div>
                  </div>
                </div>
@@ -393,45 +480,71 @@
                       <table class="table" id="orders-table">
                         <thead>
                           <tr>
-                            <th>Order</th>
-                            <th>Status</th>
-                            <th>Quantity</th>
+                            <th>No.</th>
+                            <th>Order ID</th>
+                            <th>Date</th>
                             <th>Total</th>
+                            <th>Status</th>
                             <th>Actions</th>
                           </tr>
                         </thead>
                         <tbody id="orders-tbody">
-                          <% orderData.forEach(order => { %>
-                            <% order.orderedItems.forEach(item => { %>
-                                <tr>
-                                    <td><%= item.name %></td>
-                                    <td><%= item.status %></td>
-                                    <td><%= item.quantity  %></td>
-                                    <td>₹<%= parseFloat(order.finalAmount).toLocaleString() %></td>
-                                    <td> 
-                                      <a href="/order-details/<%= order._id %>" class="btn btn-info btn-sm">View Details</a>
-                                      <% if (item.status === 'pending') { %>
-                                        <form action="javascript:void(0)" style="display:inline;">
-                                          <button type="button" class="btn btn-danger btn-sm" 
-                                                  onclick="cancelProduct('<%= order._id %>', '<%= item.id._id %>')">
-                                            Cancel
-                                          </button>
-                                        </form>
-                                        
-                                      <% } else if (item.status === 'Cancelled') { %>
-                                        <span class="text-danger">Cancelled</span>
-                                      <% } else if (item.status === 'Shipped') { %>
-                                        <span class="text-warning">Shipped</span>
-                                      <% } else if (item.status === 'Delivered') { %>
-                                        <span class="text-success">Delivered</span>
-                                      <% } else if(item.status=== "Return"){ %>
-                                        <span class="text-warning" >Return</span>
-                                        <%}%>
-                                  </td>
-                                </tr>
-                            <% }) %>
-                        <% }) %>
-                         </tbody>
+                          <% orderData.forEach((order, index) => { %>
+                            <tr>
+                              <td><%= index + 1 %></td>
+                              <td><%= order._id %></td>
+                              <td><%= new Date(order.createdOn).toLocaleString() %></td>
+                              <td>₹<%= parseFloat(order.finalAmount).toLocaleString() %></td>
+                              <td>
+                                <% 
+                                  const statuses = order.orderedItems.map(item => item.status);
+                                  const uniqueStatuses = [...new Set(statuses)];
+                                %>
+                                <% uniqueStatuses.forEach(status => { %>
+                                  <span class="badge <%= status.toLowerCase() %>"><%= status %></span>
+                                <% }) %>
+                              </td>
+                              <td>
+                                <a href="/order-details/<%= order._id %>" class="btn btn-info btn-sm">View Details</a>
+                              </td>
+                            </tr>
+                            <tr class="order-items">
+                              <td colspan="6">
+                                <div class="order-items-container">
+                                  <table class="table table-sm mb-0">
+                                    <thead>
+                                      <tr>
+                                        <th>Product</th>
+                                        <th>Quantity</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      <% order.orderedItems.forEach(item => { %>
+                                        <tr>
+                                          <td><%= item.name %></td>
+                                          <td><%= item.quantity %></td>
+                                          <td><%= item.status %></td>
+                                          <td>
+                                            <% if (item.status === 'pending') { %>
+                                              <form action="javascript:void(0)" style="display:inline;">
+                                                <button type="button" class="btn btn-danger btn-sm" 
+                                                        onclick="cancelProduct('<%= order._id %>', '<%= item.id._id %>')">
+                                                  Cancel
+                                                </button>
+                                              </form>
+                                            <% } %>
+                                          </td>
+                                        </tr>
+                                      <% }) %>
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </td>
+                            </tr>
+                          <% }) %>
+                        </tbody>
                       </table>
                       <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
                         <div class="mt-4">
@@ -469,36 +582,63 @@
                     const tbody = document.querySelector('#orders-tbody');
                     tbody.innerHTML = '';
                     
-                    data.orders.forEach(order => {
-                      order.orderedItems.forEach(item => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                          <td>${item.name}</td>
-                          <td>${item.status}</td>
-                          <td>${item.quantity}</td>
-                          <td>₹${item.price}</td>
-                          <td>
-                            <a href="/order-details/${order._id}" class="btn btn-info btn-sm">View Details</a>
-                            ${item.status === 'pending' ? `
-                              <form action="javascript:void(0)" style="display:inline;">
-                                <button type="button" class="btn btn-danger btn-sm" 
-                                        onclick="cancelProduct('${order._id}', '${item.id._id}')">
-                                  Cancel
-                                </button>
-                              </form>
-                            ` : item.status === 'Cancelled' ? `
-                              <span class="text-danger">Cancelled</span>
-                            ` : item.status === 'Shipped' ? `
-                              <span class="text-warning">Shipped</span>
-                            ` : item.status === 'Delivered' ? `
-                              <span class="text-success">Delivered</span>
-                            ` : item.status === 'Return' ? `
-                              <span class="text-warning">Return</span>
-                            ` : ''}
-                          </td>
-                        `;
-                        tbody.appendChild(tr);
-                      });
+                    data.orders.forEach((order, index) => {
+                      const startIndex = (data.currentPage - 1) * data.ordersPerPage;
+                      const serialNumber = startIndex + index + 1;
+                      
+                      const tr = document.createElement('tr');
+                      tr.innerHTML = `
+                        <td>${serialNumber}</td>
+                        <td>${order._id}</td>
+                        <td>${new Date(order.createdOn).toLocaleString()}</td>
+                        <td>₹${parseFloat(order.finalAmount).toLocaleString()}</td>
+                        <td>
+                          ${order.orderedItems.map(item => `<span class="badge ${item.status.toLowerCase()}">${item.status}</span>`).join(' ')}
+                        </td>
+                        <td>
+                          <a href="/order-details/${order._id}" class="btn btn-info btn-sm">View Details</a>
+                        </td>
+                      `;
+                      tbody.appendChild(tr);
+
+                      const orderItemsTr = document.createElement('tr');
+                      orderItemsTr.className = 'order-items';
+                      orderItemsTr.innerHTML = `
+                        <td colspan="6">
+                          <div class="order-items-container">
+                            <table class="table table-sm mb-0">
+                              <thead>
+                                <tr>
+                                  <th>Product</th>
+                                  <th>Quantity</th>
+                                  <th>Status</th>
+                                  <th>Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                ${order.orderedItems.map(item => `
+                                  <tr>
+                                    <td>${item.name}</td>
+                                    <td>${item.quantity}</td>
+                                    <td>${item.status}</td>
+                                    <td>
+                                      ${item.status === 'pending' ? `
+                                        <form action="javascript:void(0)" style="display:inline;">
+                                          <button type="button" class="btn btn-danger btn-sm" 
+                                                  onclick="cancelProduct('${order._id}', '${item.id._id}')">
+                                            Cancel
+                                          </button>
+                                        </form>
+                                      ` : ''}
+                                    </td>
+                                  </tr>
+                                `).join('')}
+                              </tbody>
+                            </table>
+                          </div>
+                        </td>
+                      `;
+                      tbody.appendChild(orderItemsTr);
                     });
 
                     // Update pagination UI
@@ -515,7 +655,7 @@
                         `;
                       }
                       
-                      for (let i = 1; i <= data.totalPages; i++) {
+                      for(let i = 1; i <= data.totalPages; i++) {
                         ul.innerHTML += `
                           <li class="page-item ${data.currentPage === i ? 'active' : ''}">
                             <a class="page-link" href="#" onclick="loadOrders(${i}); return false;">${i}</a>
@@ -613,6 +753,50 @@
                    </div>
                  </div>
                </div>
+
+               <div class="tab-pane fade" id="change-password" role="tabpanel" aria-labelledby="change-password-tab">
+                  <div class="card">
+                    <div class="card-header">
+                      <h5 class="mb-0">Change Password</h5>
+                    </div>
+                    <div class="card-body">
+                      <form id="changePasswordForm" class="needs-validation" novalidate>
+                        <div class="row">
+                          <div class="form-group col-md-12 mb-3">
+                            <label for="current-password" class="form-label">Current Password</label>
+                            <input type="password" class="form-control" id="current-password" name="currentPassword" required 
+                              minlength="8" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$">
+                            <div class="invalid-feedback">
+                              Please enter your current password
+                            </div>
+                          </div>
+                          
+                          <div class="form-group col-md-12 mb-3">
+                            <label for="new-password" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="new-password" name="newPassword" required 
+                              minlength="8" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$">
+                            <div class="invalid-feedback">
+                              Password must be at least 8 characters long and include uppercase, lowercase, number, and special character
+                            </div>
+                            <small class="text-muted">Password must contain at least 8 characters, including uppercase, lowercase, number, and special character</small>
+                          </div>
+                          
+                          <div class="form-group col-md-12 mb-3">
+                            <label for="confirm-password" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirm-password" name="confirmPassword" required>
+                            <div class="invalid-feedback">
+                              Passwords do not match
+                            </div>
+                          </div>
+                          
+                          <div class="col-md-12">
+                            <button type="submit" class="btn btn-success" id="updatePasswordBtn">Update Password</button>
+                          </div>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
 
            
        </div>
@@ -758,5 +942,116 @@ document.getElementById('addMoneyForm').addEventListener('submit', async functio
             text: error.message || 'Failed to process payment'
         });
     }
+});
+
+$(document).ready(function() {
+    // Password validation function
+    function validatePassword(password) {
+        const minLength = 8;
+        const hasUpperCase = /[A-Z]/.test(password);
+        const hasLowerCase = /[a-z]/.test(password);
+        const hasNumbers = /\d/.test(password);
+        const hasSpecialChar = /[@$!%*?&]/.test(password);
+        
+        return password.length >= minLength && hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar;
+    }
+
+    // Form validation
+    $('#changePasswordForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const currentPassword = $('#current-password').val().trim();
+        const newPassword = $('#new-password').val().trim();
+        const confirmPassword = $('#confirm-password').val().trim();
+        
+        // Reset previous error states
+        $(this).removeClass('was-validated');
+        $('.is-invalid').removeClass('is-invalid');
+        
+        let isValid = true;
+        
+        // Validate current password
+        if (!currentPassword) {
+            $('#current-password').addClass('is-invalid');
+            isValid = false;
+        }
+        
+        // Validate new password
+        if (!validatePassword(newPassword)) {
+            $('#new-password').addClass('is-invalid');
+            isValid = false;
+        }
+        
+        // Validate confirm password
+        if (newPassword !== confirmPassword) {
+            $('#confirm-password').addClass('is-invalid');
+            isValid = false;
+        }
+        
+        if (!isValid) {
+            return false;
+        }
+        
+        // Disable submit button to prevent double submission
+        $('#updatePasswordBtn').prop('disabled', true);
+        
+        // Send AJAX request
+        $.ajax({
+            url: '/update-password',
+            method: 'POST',
+            data: {
+                currentPassword: currentPassword,
+                newPassword: newPassword,
+                confirmPassword: confirmPassword
+            },
+            success: function(response) {
+                if (response.status) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Success',
+                        text: 'Password updated successfully',
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        // Clear the form
+                        $('#changePasswordForm')[0].reset();
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: response.message || 'Failed to update password'
+                    });
+                }
+            },
+            error: function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Something went wrong. Please try again.'
+                });
+            },
+            complete: function() {
+                // Re-enable submit button
+                $('#updatePasswordBtn').prop('disabled', false);
+            }
+        });
+    });
+
+    // Show/hide password toggle
+    $('.form-group').append('<span class="password-toggle"><i class="fi-rs-eye"></i></span>');
+    
+    $('.password-toggle').click(function() {
+        const input = $(this).siblings('input');
+        const icon = $(this).find('i');
+        
+        if (input.attr('type') === 'password') {
+            input.attr('type', 'text');
+            icon.removeClass('fi-rs-eye').addClass('fi-rs-eye-crossed');
+        } else {
+            input.attr('type', 'password');
+            icon.removeClass('fi-rs-eye-crossed').addClass('fi-rs-eye');
+        }
+    });
 });
 </script>

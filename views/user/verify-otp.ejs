@@ -217,9 +217,9 @@
           </form>
           <div class="form-group text-center">
             <div id="otpTimer" class="otp-timer">
-              <span id="timerValue">4.59</span>
+              <span id="timerValue">30</span>
             </div>
-            <button class="btn btn-secondary" onclick="resendOTP()">
+            <button id="resendOtpBtn" class="btn btn-secondary" onclick="resendOTP()">
               Resend OTP
             </button>
           </div>
@@ -239,14 +239,13 @@
       let timerInterval;
 
       function startTimer() {
+        document.getElementById("resendOtpBtn").disabled = true;
         timerInterval = setInterval(() => {
           timer--;
 
-          // Calculate minutes and seconds from the remaining timer
           const minutes = Math.floor(timer / 60);
           const seconds = timer % 60;
 
-          // Display the timer in "MM:SS" format
           document.getElementById("timerValue").textContent = `${minutes}:${
             seconds < 10 ? "0" : ""
           }${seconds}`;
@@ -256,6 +255,7 @@
             document.getElementById("timerValue").classList.add("expired");
             document.getElementById("timerValue").textContent = "Expired";
             document.getElementById("otp").disabled = true;
+            document.getElementById("resendOtpBtn").disabled = false;
           }
         }, 1000);
       }

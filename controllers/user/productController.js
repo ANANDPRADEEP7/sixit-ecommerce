@@ -139,8 +139,64 @@ const submitReview = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+const filterByCategory = async (req, res) => {
+    try {
+        const categoryId = req.query.categoryId;
+        const userId = req.session.user;
+        const userData = await User.findById(userId);
+        const categories = await Category.find({ isBlocked: false });
+
+        let query = { isBlocked: false, quantity: { $gt: 0 } };
+        if (categoryId && categoryId !== 'all') {
+            query.category = categoryId;
+        }
+
+        const products = await Product.find(query).populate('category');
+
+        // Calculate effective offers and discounted prices
+        const productsWithOffers = products.map(product => {
+            const productObj = product.toObject();
+            const categoryOffer = product.category.categoryOffer || 0;
+            const productOffer = product.productOffer || 0;
+            productObj.effectiveOffer = Math.max(categoryOffer, productOffer);
+            
+            if (productObj.effectiveOffer > 0) {
+                const discount = (productObj.regularPrice * productObj.effectiveOffer) / 100;
+                productObj.salePrice = Math.floor(productObj.regularPrice - discount);
+            }
+
+            // Add wishlist status
+            if (userData && userData.wishlist) {
+                productObj.isInWishlist = userData.wishlist.includes(product._id);
+            }
+            
+            return productObj;
+        });
+
+        if (req.xhr) {
+            // If AJAX request, return JSON
+            res.json({ products: productsWithOffers, categories });
+        } else {
+            // If regular request, render page
+            res.render('user/shop', {
+                products: productsWithOffers,
+                categories,
+                user: userData,
+                selectedCategory: categoryId || 'all'
+            });
+        }
+    } catch (error) {
+        console.error('Error filtering by category:', error);
+        if (req.xhr) {
+            res.status(500).json({ error: 'Error filtering products' });
+        } else {
+            res.redirect('/error');
+        }
+    }
+};
 
 module.exports={
   productDetails,
-  submitReview
+  submitReview,
+  filterByCategory
 };

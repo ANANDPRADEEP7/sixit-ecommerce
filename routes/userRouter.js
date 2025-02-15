@@ -64,8 +64,8 @@ router.post('/resend-forgot-otp',profileController.resendOtp)
 router.post('/reset-password',profileController.postNewPassword);
 router.get('/userProfile',profileController.userProfile);
 router.get('/order-details/:orderId', userAuth, profileController.getOrderDetails);
+router.post('/update-password', userAuth, profileController.updatePassword);
 router.get("/change-password",profileController.changePassword);
-router.post("/change-password",profileController.changePasswordValid)
 router.post("/verify-changepassword-otp",profileController.verifyChangepassotp)
 
 
@@ -132,6 +132,12 @@ router.get('/orders',userAuth,profileController.getOrdersPage)
 router.get('/order-details/:orderId',userAuth,profileController.getOrderDetails)
 router.get('/download-invoice/:orderId', userAuth, profileController.downloadInvoice)
 router.get('/api/orders', userAuth, profileController.getOrdersPage) // New API endpoint for AJAX pagination
+
+// Product filters
+// Uncomment the filter route in userRouter.js
+router.get('/filter-by-category', userAuth, productController.filterByCategory);
+// router.get('/filter-by-category', userAuth, productController.filterByCategory);
+router.get('/filter-by-price', userAuth, userController.filterByPrice);
 
 router.get('/get-counts', userAuth, async (req, res) => {
     try {

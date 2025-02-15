@@ -299,6 +299,7 @@ const changePassword = async (req, res) => {
     res.redirect("/pageNotFound")
   }
 }
+
 const changePasswordValid = async (req, res) => {
   try {
     const { email } = req.body;
@@ -343,6 +344,46 @@ const verifyChangepassotp = async (req, res) => {
     res.status(500).json({ success: false, message: "An error occured.Please try again later" })
   }
 }
+
+const updatePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+    const userId = req.session.user;
+
+    // Find the user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ status: false, message: 'User not found' });
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ status: false, message: 'Current password is incorrect' });
+    }
+
+    // Validate new password
+    if (newPassword.length < 8) {
+      return res.status(400).json({ status: false, message: 'New password must be at least 8 characters long' });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ status: false, message: 'New password and confirm password do not match' });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    // Update password
+    user.password = hashedPassword;
+    await user.save();
+
+    return res.status(200).json({ status: true, message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Error in updating password:', error);
+    return res.status(500).json({ status: false, message: 'Internal server error' });
+  }
+};
 
 const getOrderDetails = async (req, res) => {
   try {
@@ -702,5 +743,6 @@ module.exports = {
     getEditAddressPage,
     getOrdersPage,
     getOrderDetails,
-    downloadInvoice
+    downloadInvoice,
+    updatePassword
 }

@@ -107,10 +107,18 @@
                                     <div class="table-responsive">
                                         <table class="table">
                                             <tbody>
-                                                
+                                                <tr>
+                                                    <td class="cart_total_label">
+                                                        <h6 class="text-muted">Subtotal</h6>
+                                                    </td>
+                                                    <td class="cart_total_amount">
+                                                        <h4 class="text-brand text-end" id="cart-total">₹<%= Math.floor(cart.reduce((total, item) => total + item.totalPrice, 0)) %></h4>
+                                                    </td>
+                                                </tr>
                                             </tbody>
                                         </table>
                                     </div>
+                                    
                                     <a href="/checkout" class="btn "> <i class="fi-rs-box-alt mr-10"></i> Proceed To CheckOut</a>
                                 </div>
                             </div>
@@ -161,67 +169,70 @@
                     updateCartQuantity(productId, newQty, btn);
                 });
 
-                async function updateCartQuantity(productId, newQuantity, btnElement) {
-                    try {
-                        const response = await fetch('/updateCartQuantity', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                productId: productId,
-                                quantity: newQuantity
-                            })
-                        });
+                function updateCartQuantity(productId, newQuantity, btnElement) {
+                    $.ajax({
+                        url: '/updateCartQuantity',
+                        method: 'POST',
+                        data: {
+                            productId: productId,
+                            quantity: newQuantity
+                        },
+                        success: function(response) {
+                            if (response.status) {
+                                // Update quantity display
+                                $(`#qty-${productId}`).text(newQuantity);
+                                
+                                // Update button data attributes
+                                $('.qty-up, .qty-down').filter(`[data-product-id="${productId}"]`).data('current-qty', newQuantity);
 
-                        const data = await response.json();
+                                // Update item total price
+                                const itemPrice = $(`#total-${productId}`).data('price');
+                                const newTotal = itemPrice * newQuantity;
+                                $(`#total-${productId}`).text(`₹${Math.floor(newTotal)}`);
 
-                        if (data.status) {
-                            // Update quantity display
-                            $(`#qty-${productId}`).text(newQuantity);
-                            
-                            // Update item total
-                            const pricePerUnit = parseFloat($(`#total-${productId}`).data('price'));
-                            const newTotal = Math.floor(pricePerUnit * newQuantity);
-                            $(`#total-${productId}`).text(`₹${newTotal}`);
+                                // Update cart total
+                                let cartTotal = 0;
+                                $('.item-total').each(function() {
+                                    const price = $(this).text().replace('₹', '');
+                                    cartTotal += parseFloat(price);
+                                });
+                                $('#cart-total').text(`₹${Math.floor(cartTotal)}`);
 
-                            // Update button data attributes
-                            $('.qty-up, .qty-down').filter(`[data-product-id="${productId}"]`).data('current-qty', newQuantity);
-
-                            // Show success message
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Cart Updated',
-                                text: 'Cart quantity updated successfully!',
-                                timer: 1000,
-                                showConfirmButton: false
-                            });
-                        } else {
-                            // Show error message from server
+                                // Show success message
+                                Swal.fire({
+                                    toast: true,
+                                    icon: 'success',
+                                    title: 'Cart Updated',
+                                    position: 'top-end',
+                                    showConfirmButton: false,
+                                    timer: 1500
+                                });
+                            } else {
+                                // Show error message
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Update Failed',
+                                    text: response.message,
+                                    confirmButtonText: 'OK'
+                                });
+                                // Reset quantity to previous value
+                                const currentQty = btnElement.data('current-qty');
+                                $(`#qty-${productId}`).text(currentQty);
+                            }
+                        },
+                        error: function(xhr, status, error) {
+                            // Show error message
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Update Failed',
-                                text: data.message || 'Failed to update cart quantity',
+                                text: 'Failed to update cart. Please try again.',
                                 confirmButtonText: 'OK'
                             });
-                            
-                            // Reset the quantity display to previous value
-                            const currentQty = parseInt(btnElement.data('current-qty'));
+                            // Reset quantity to previous value
+                            const currentQty = btnElement.data('current-qty');
                             $(`#qty-${productId}`).text(currentQty);
                         }
-                    } catch (error) {
-                        console.error("Error in updating cart quantity", error);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: 'Failed to update the cart. Please try again.',
-                            confirmButtonText: 'OK'
-                        });
-                        
-                        // Reset the quantity display to previous value
-                        const currentQty = parseInt(btnElement.data('current-qty'));
-                        $(`#qty-${productId}`).text(currentQty);
-                    }
+                    });
                 }
             });
 
