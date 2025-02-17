@@ -293,7 +293,7 @@ const loadShoppingPage=async(req,res)=>{
     const userData=await User.findById(userId);
     const cart = await Cart.findOne({ userId }).populate("items.productId");
     const categories=await Category.find({isListed:true});
-    const brands=await Brand.find({isListed:true});
+    const brands=await Brand.find({isBlocked:false});
 
     const cartItems = cart ? cart.items.filter(item => {
       const product = item.productId;
@@ -376,7 +376,7 @@ const filterProduct=async (req,res)=>{
     const userData=await User.findById(user);
     const findCategory=category ? await Category.findOne({_id:category}):null;
     const findBrand=brand? await Brand.findOne({_id:brand}):null;
-    const brands=await Brand.find({}).lean();
+    const brands=await Brand.find({isBlocked:false}).lean();
     const categories=await Category.find({isListed:true}).lean();
     const categoryListed=categories.map(category=>category._id);
 
@@ -472,7 +472,7 @@ const filterByPrice=async(req,res)=>{
     const maxPrice = parseInt(req.query.price) || 10000;
     const sort = req.query.sort;
     const userData = await User.findById(user);
-    const brands = await Brand.find({}).lean();
+    const brands=await Brand.find({isBlocked:false}).lean();
     const categories = await Category.find({ isListed: true }).lean();
     const categoryListed = categories.map(category => category._id);
 
@@ -564,7 +564,7 @@ const searchProducts = async (req, res) => {
     }
 
     const userData = await User.findById(user);
-    const brands = await Brand.find({}).lean();
+    const brands=await Brand.find({isBlocked:false}).lean();
     const categories = await Category.find({ isListed: true }).lean();
     const categoryListed = categories.map(category => category._id);
 
@@ -623,7 +623,7 @@ const filterByName = async (req, res) => {
     const user = req.session.user;
     const order = req.query.sort;
     const userData = await User.findById(user);
-    const brands = await Brand.find({}).lean();
+    const brands=await Brand.find({isBlocked:false}).lean();
     const categories = await Category.find({ isListed: true }).lean();
     const categoryListed = categories.map(category => category._id);
 
@@ -750,6 +750,44 @@ const applyCoupon = async (req, res) => {
   }
 };
 
+// Filter products based on category and brand
+const filterProducts = async (req, res) => {
+    try {
+        const { category, brand } = req.query;
+        let query = { isListed: true };
+
+        // Add category filter if provided
+        if (category) {
+            query.category = category;
+        }
+
+        // Add brand filter if provided
+        if (brand) {
+            query.brand = brand;
+        }
+
+        // Fetch filtered products
+        const products = await Product.find(query)
+            .populate('category')
+            .populate('offer');
+
+        // Fetch all categories for the filter sidebar
+        const categories = await Category.find({ isListed: true });
+
+        res.json({
+            success: true,
+            products,
+            categories
+        });
+    } catch (error) {
+        console.error('Error filtering products:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+};
+
 module.exports={
   lodeHomepage,
   loadSignup,
@@ -767,5 +805,6 @@ module.exports={
   filterByName,
   applyCoupon,
   contactPage ,
-  aboutPage
+  aboutPage,
+  filterProducts
 }

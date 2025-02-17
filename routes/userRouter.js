@@ -133,6 +133,9 @@ router.get('/order-details/:orderId',userAuth,profileController.getOrderDetails)
 router.get('/download-invoice/:orderId', userAuth, profileController.downloadInvoice)
 router.get('/api/orders', userAuth, profileController.getOrdersPage) // New API endpoint for AJAX pagination
 
+// Filter products
+router.get('/filter-products', userController.filterProducts);
+
 // Product filters
 // Uncomment the filter route in userRouter.js
 router.get('/filter-by-category', userAuth, productController.filterByCategory);

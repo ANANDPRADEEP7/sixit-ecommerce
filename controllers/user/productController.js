@@ -1,6 +1,7 @@
 const Product=require("../../models/productSchema");
 const Category=require("../../models/categorySchema");
 const User=require("../../models/userSchema");
+const Brand = require("../../models/brandSchema");
 
 const productDetails=async(req,res)=>{
   try {
@@ -139,19 +140,54 @@ const submitReview = async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
 const filterByCategory = async (req, res) => {
     try {
         const categoryId = req.query.categoryId;
+        const brand = req.query.brand;
+        const sortBy = req.query.sort;
+        const page = parseInt(req.query.page) || 1;
+        const limit = 8; // Products per page
         const userId = req.session.user;
         const userData = await User.findById(userId);
         const categories = await Category.find({ isBlocked: false });
+        const brands = await Brand.find({ isBlocked: false });
 
-        let query = { isBlocked: false, quantity: { $gt: 0 } };
+        // Build query
+        let query = { 
+            isBlocked: false, 
+            quantity: { $gt: 0 } 
+        };
+
+        // Apply category filter
         if (categoryId && categoryId !== 'all') {
             query.category = categoryId;
         }
 
-        const products = await Product.find(query).populate('category');
+        // Apply brand filter
+        if (brand && brand !== 'all') {
+            query.brand = brand;
+        }
+
+        // Create base query
+        let productsQuery = Product.find(query).populate('category');
+
+        // Apply sorting for non-name fields at database level
+        if (sortBy === 'newest') {
+            productsQuery = productsQuery.sort({ createdAt: -1 });
+        } else if (sortBy === 'priceHigh' || sortBy === 'priceLow') {
+            productsQuery = productsQuery.sort({ salePrice: sortBy === 'priceHigh' ? -1 : 1 });
+        }
+
+        // Get total count for pagination
+        const totalProducts = await Product.countDocuments(query);
+        const totalPages = Math.ceil(totalProducts / limit);
+
+        // Apply pagination
+        productsQuery = productsQuery.skip((page - 1) * limit).limit(limit);
+
+        // Execute query
+        const products = await productsQuery;
 
         // Calculate effective offers and discounted prices
         const productsWithOffers = products.map(product => {
@@ -173,22 +209,67 @@ const filterByCategory = async (req, res) => {
             return productObj;
         });
 
-        if (req.xhr) {
+        // Handle sorting after data processing
+        if (sortBy) {
+            switch (sortBy) {
+                case 'nameAsc':
+                    productsWithOffers.sort((a, b) => 
+                        a.productName.toLowerCase().localeCompare(b.productName.toLowerCase())
+                    );
+                    break;
+                case 'nameDesc':
+                    productsWithOffers.sort((a, b) => 
+                        b.productName.toLowerCase().localeCompare(a.productName.toLowerCase())
+                    );
+                    break;
+                case 'priceHigh':
+                case 'priceLow':
+                    // Re-sort after calculating sale prices
+                    productsWithOffers.sort((a, b) => {
+                        return sortBy === 'priceHigh' 
+                            ? b.salePrice - a.salePrice 
+                            : a.salePrice - b.salePrice;
+                    });
+                    break;
+            }
+        }
+
+        if (req.xhr || req.headers.accept.includes('application/json')) {
             // If AJAX request, return JSON
-            res.json({ products: productsWithOffers, categories });
+            res.json({
+                success: true,
+                products: productsWithOffers,
+                pagination: {
+                    currentPage: page,
+                    totalPages: totalPages,
+                    hasNextPage: page < totalPages,
+                    hasPreviousPage: page > 1
+                },
+                categories,
+                brands
+            });
         } else {
             // If regular request, render page
             res.render('user/shop', {
                 products: productsWithOffers,
                 categories,
+                brands,
                 user: userData,
-                selectedCategory: categoryId || 'all'
+                selectedCategory: categoryId || 'all',
+                selectedBrand: brand || 'all',
+                currentPage: page,
+                totalPages: totalPages,
+                hasNextPage: page < totalPages,
+                hasPreviousPage: page > 1
             });
         }
     } catch (error) {
         console.error('Error filtering by category:', error);
-        if (req.xhr) {
-            res.status(500).json({ error: 'Error filtering products' });
+        if (req.xhr || req.headers.accept.includes('application/json')) {
+            res.status(500).json({ 
+                success: false,
+                error: 'Error filtering products'
+            });
         } else {
             res.redirect('/error');
         }
